@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>scc_replanner</name>
+  <version>0.1.0</version>
+  <description>
+    SCC speed re-profiler. Takes Trajectory + PredictObjects + VehicleState,
+    detects in-lane lead via Frenet (|n| ≤ lane_half_width), and re-profiles
+    trajectory speed with time-headway + min-gap. Path unchanged.
+  </description>
+  <maintainer email="rhdusal22@gmail.com">scc_controller_imitator</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>autohyu_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>autohyu_msgs</build_export_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>autohyu_msgs</exec_depend>
+
+  <export>
+  </export>
+</package>

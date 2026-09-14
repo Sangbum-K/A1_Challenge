@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+
+# vscode
+.vscode/
+
+# pycharm
+.idea/
+
+# 출력 산출물
+outputs/*
+outputs_multi/**
+multicar/run/
+training_status/ML_Experiment_Table.csv
+*.pth
+*.ckpt
+
+# 로그
+log*
+*.log
+wandb/
+
+# 데이터셋 캐시
+data
+data/*
+*.bag
+*.noised_bag
+*.pkl
+*.pt
+
+# 환경
+.env
+
+# acados 빌드 산출물 (legacy 로 이동)
+legacy/external/acados_scc/build_cache/
+legacy/external/acados_scc/**/c_generated_code/
+legacy/external/acados_scc/**/acados_ocp_*.json
+
+# mpc/ HPIPM fork — A1_Rule 의존 symlink 들 (다른 머신 깨짐)
+# config / pedal_map / race_trajectories 는 setup 시 별도 link/복사로 해결
+mpc/config
+mpc/resources
+mpc/build/
+mpc/devel/
+mpc/logs/
+mpc/.catkin_tools/
+
+# OS / editor
+.DS_Store
+*.swp
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+.claude/
+
+# data 는 무시되지만 inference ckpts 만 force-track
+!data/ckpts/
+multicar/scc_multicar.ini
+submit.zip
+
+# MkDocs build output
+site/

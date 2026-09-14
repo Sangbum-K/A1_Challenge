@@ -1,0 +1,11 @@
+<!-- -->
+<launch>    
+    <arg name="use_morai_ego" default="false"/>
+    <arg name="use_gt_state" default="true"/>
+
+    <rosparam file="$(find lateral_control)/../../../../config/rosparam_system.yaml" command="load"/>
+    <node pkg="lateral_control" type="lateral_control" name="lateral_control" output="screen" respawn="true">
+        <param name="use_morai_ego" value="$(arg use_morai_ego)"/>
+        <param name="use_gt_state" value="$(arg use_gt_state)"/>
+    </node>
+</launch>

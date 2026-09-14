@@ -1,0 +1,4 @@
+int64 left_boundary_id
+int64 right_boundary_id
+int64 center_lane_id
+geometry_msgs/Point[] stop_point

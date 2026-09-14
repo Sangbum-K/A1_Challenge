@@ -1,0 +1,1 @@
+autohyu_msgs/TrajectoryBoundaryPoint[] point

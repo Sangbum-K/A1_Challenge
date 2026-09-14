@@ -1,0 +1,10 @@
+float64 time
+float64 distance
+float64 x
+float64 y
+float64 z
+float64 curvature
+float64 speed
+float64 max_speed
+bool    on_shortest_path
+int16   lane_num

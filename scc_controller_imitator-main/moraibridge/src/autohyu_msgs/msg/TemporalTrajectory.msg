@@ -1,0 +1,1 @@
+autohyu_msgs/TemporalTrajectoryPoint[] point

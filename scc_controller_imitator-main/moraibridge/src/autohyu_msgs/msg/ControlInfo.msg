@@ -1,0 +1,11 @@
+float64 cross_track_error
+float64 yaw_error
+float64 speed_error
+float64 target_speed
+float64 current_speed
+float64 opt_cost
+float64 opt_time
+float64 solve_time
+float64 total_time
+float64 sqp_iter
+float64 qp_iter

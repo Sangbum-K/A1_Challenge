@@ -1,0 +1,17 @@
+float32 time
+float32 distance
+uint16  direction
+float32 x
+float32 y
+float32 z
+float32 yaw
+float32 curvature
+float32 speed
+float32 acceleration
+float32 s
+float32 n
+float32 ds
+float32 dn
+float32 dds
+float32 ddn
+float32 yaw_sn

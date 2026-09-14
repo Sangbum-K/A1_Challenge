@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>scc_batch_synth</name>
+  <version>0.1.0</version>
+  <description>
+    Batch GT synthesis: parse raw EGO_INFO/OBJECT_INFO, build interface::*
+    messages, apply jiwon_e2e velocity frame fix, call SccSpeedReplanner +
+    LateralControl + LongitudinalControl, save GT as binary records.
+  </description>
+  <maintainer email="rhdusal22@gmail.com">scc_controller_imitator</maintainer>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>rosbag</build_depend>
+  <build_depend>autohyu_msgs</build_depend>
+  <build_depend>scc_replanner</build_depend>
+  <build_depend>lateral_control</build_depend>
+  <build_depend>longitudinal_control</build_depend>
+
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>autohyu_msgs</build_export_depend>
+  <build_export_depend>scc_replanner</build_export_depend>
+  <build_export_depend>lateral_control</build_export_depend>
+  <build_export_depend>longitudinal_control</build_export_depend>
+
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>autohyu_msgs</exec_depend>
+  <exec_depend>scc_replanner</exec_depend>
+  <exec_depend>lateral_control</exec_depend>
+  <exec_depend>longitudinal_control</exec_depend>
+
+  <export>
+  </export>
+</package>

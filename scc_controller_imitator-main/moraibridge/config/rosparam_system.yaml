@@ -1,0 +1,31 @@
+# Task period [s]
+task_period:
+  ## RTE
+  period_tf_dynamic: 0.01
+
+  ## SIM
+  period_vehicle_driver: 0.02       # 50Hz — ego state (구 1.0=1Hz 는 closed_loop pub 을 1Hz 로 묶음)
+  period_object_driver: 0.05        # 20Hz — in-lane lead 인지 (구 1.0)
+  period_vehicle_control: 0.02
+  period_multi_ego_setting: 20.0
+  period_camera_driver: 0.05        # 20Hz — closed_loop INFER_RATE_HZ=20 매칭 (구 1.0=1Hz 가 pub 1Hz 주범)
+  period_dataset_generator: 0.05
+
+  ## APP
+  # Planning
+  period_waypoint_planning: 0.05
+  period_global_planning: 0.05
+  period_motion_prediction: 0.05
+  period_behavior_planning: 0.05
+  period_trajectory_planning: 0.05
+
+  # Control
+  period_lateral_control: 0.02
+  period_longitudinal_control: 0.01
+  period_acados_scc_control: 0.01
+
+  # ML-LatLonControlML
+  period_lat_lon_control_ml: 0.01
+
+  # Data Collection
+  period_data_collection: 0.1

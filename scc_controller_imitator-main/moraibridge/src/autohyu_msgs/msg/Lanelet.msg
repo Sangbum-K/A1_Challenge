@@ -1,0 +1,11 @@
+int64 id
+bool is_ego
+bool is_goal
+bool is_shortest_path
+int64 left_boundary_line_id
+int64 right_boundary_line_id
+autohyu_msgs/LaneletRelation[] relation
+autohyu_msgs/LaneletTrafficSign[] traffic_sign
+autohyu_msgs/LaneletTrafficSign[] turn_signal
+autohyu_msgs/LaneletTrafficLight[] traffic_light
+autohyu_msgs/LaneletRightOfWay[] right_of_way
