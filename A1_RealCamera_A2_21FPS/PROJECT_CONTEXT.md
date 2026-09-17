@@ -193,7 +193,11 @@ A1_RealCamera_A2_21FPS/scripts/live_camera_a2_21fps.py
 
 현재 구현된 기능:
 
-- OpenCV UVC capture, latest-frame-only thread
+- camera_aravis2 ROS2 `sensor_msgs/Image` subscriber가 기본 입력
+- sensor-data QoS depth 1 및 latest-frame-only 처리
+- `cv_bridge`의 BayerRG8→BGR8 debayer 후 기존 RGB normalization 경로 연결
+- ROS header timestamp 기반 history와 header/host-arrival latency 분리 기록
+- OpenCV UVC capture는 `--input uvc` fallback prototype으로 유지
 - 1280×720 → y=235:485
 - BGR→RGB, ImageNet normalization
 - exact senior backbone/a₂ checkpoint load
@@ -201,12 +205,63 @@ A1_RealCamera_A2_21FPS/scripts/live_camera_a2_21fps.py
 - stage p50/p95/p99, output FPS, capture-to-a₂ latency, drop/history 품질
 - 실시간 모델 ROI 위 A₂ 40-bin object probability strip, 거리/vL_rel annotation,
   proximity bar, 고정 중앙 관심영역 bin 16~25 overlay
+- 화면 상단은 software resize 없는 실제 1280×720 수신 frame 전체이며, 모델이 사용하는
+  `x=0:1280, y=235:485` crop은 초록 경계로 표시한다. 노란색은 카메라 영상 위에서
+  제거했고 하단 패널의 lead-search bin 16~25 표시에만 사용한다. 이는 crop/차선/차량
+  bounding box가 아니다.
 - 인접 object-positive bin group 단위 표시와 선택적 raw `(40,7)` JSON logging/overlay MP4 저장
 - 모델 compute와 A₂ decode/시각화 시간을 별도 계측
 - `frames.jsonl`, `summary.json`
 - f₂/controller 미사용
 
-중요: 최종 방향은 `camera_aravis2 + ROS2`이지만 현재 runner는 아직 OpenCV UVC 입력이다. 다음 구현 시 ROS2 subscriber adapter로 교체하거나 별도 ROS2 node를 추가해야 한다. `camera_aravis2`의 `sensor_msgs/Image` BayerRG8를 받고, hardware ROI 또는 geometry adapter 후 debayer/RGB/normalization으로 연결해야 한다.
+2026-09-14 Nuvo에서 ROS2 adapter와 실제 camera run을 검증했다. 처음에는 `enp5s0`의
+NetworkManager `camlink`가 DHCP로 바뀌어 주소를 못 받았고 discovery가 실패했다.
+`enp5s0=192.168.1.100/24`, MTU 1500, no gateway로 복구한 뒤 실제 연결된 카메라
+`Hikrobot-MV-CS023-10GC-DA8931779 (192.168.1.51)`를 Aravis와 camera_finder 양쪽에서 찾았다.
+
+초기 1920×1120 smoke/resize run으로 실제 BayerRG8 receipt, debayer, QoS와 CUDA 경로를
+검증한 뒤, 아래의 1280×720 hardware-ROI 공식 결과로 대체했다. 중복되는 예비 산출물은
+2026-09-14 정리 과정에서 제거했다. Fast DDS large-SHM profile은 driver와 runner 양쪽에
+계속 적용한다.
+
+사용자 요청으로 camera input 자체를 중앙 hardware ROI 1280×720으로 변경하고 노출을
+15000 µs로 올린 뒤 전체 실험을 다시 수행했다. 센서 1920×1200에서 Offset=(320,240),
+BayerRG8, packet 1500, 21 FPS이며 software resize는 사용하지 않았다. 결과 파일은
+`outputs/real_camera_1280x720_exp15000_fp32_60s/summary.json`이다.
+
+- ROS image 1280×720 BayerRG8, exposure 15000 µs
+- measured 1261 frames, steady 1240 frames
+- capture 20.999 FPS, steady a₂ 20.998 FPS
+- compute p95 15.214 ms, ROS callback arrival→a₂ p95 15.867 ms
+- ROS header→a₂ p95 26.383 ms
+- skipped frame 0, history duplicate 0, NaN/Inf 0
+- `sustained_a2_21fps=true`, `resized_any_frame=false`
+
+shape은 선배 입력 1280×720과 같지만 1920 센서에서 중앙 crop한 것이므로 수평 FOV가
+학습 카메라와 같다는 calibration 근거는 아직 없다. 따라서 명시적으로
+`geometry_valid_for_accuracy=false`이며 이 결과는 throughput 성공이다.
+
+같은 결과를 사람이 읽기 쉽게 정리한 보고서는
+`outputs/real_camera_1280x720_exp15000_fp32_60s/RESULT.md`에 있다.
+
+사용자와 함께 모니터 주행 영상을 촬영한 25000 µs 정식 시각화 60초 run도 수행했다.
+결과와 직접 화면 검토는
+`outputs/real_camera_1280x720_exp25000_visual_60s/RESULT.md`에 정리했다.
+
+- 화면 표시 + overlay MP4 + full raw `(40,7)` A₂ JSON을 동시에 기록
+- measured 1260, steady 1239 frame
+- capture 20.997 FPS, steady a₂ 20.996 FPS, compute p95 15.595 ms
+- skipped 0, history duplicate 0, NaN/Inf 0, sustained 21 FPS PASS
+- 0–10초 비주행/전환 화면의 중앙 lead 검출률 0%
+- 10–60초 주행 영상의 중앙 lead 검출률 53.67%
+- lead-positive run median 2 frame, 최장 약 1.90초로 반응이 분절됨
+- 기술 처리량은 PASS지만 화면 반응성은 PARTIAL이며 거리·상대속도 정확도 성공이 아님
+
+Nuvo runtime은 `A1_RealCamera_A2_21FPS/.venv`에 구성한다. RTX A5000 driver 470.256.02와
+호환되는 PyTorch 2.4.1 CUDA 11.8 조합이며 CUDA runtime/cuDNN은 `.venv` 안에 격리한다.
+full CUDA 11.8 toolkit도 `/home/ailab/git/sangbum/cuda-11.8`에 로컬 설치되어 있고
+`nvcc V11.8.89`를 확인했다. runner는 CUDA extension을 compile하지 않으므로 실제 inference는
+PyTorch wheel의 격리된 runtime을 사용한다.
 
 원본 `closed_loop_node.py`를 그대로 쓰면 안 되는 이유:
 
@@ -215,19 +270,22 @@ A1_RealCamera_A2_21FPS/scripts/live_camera_a2_21fps.py
 - `INFER_RATE_HZ=20` cap
 - 이번 목표인 ROS2 physical-camera→a₂ 21 FPS를 그대로 측정할 수 없음
 
-현재 workspace Python에는 torch/cv2/timm이 없어 실제 model/camera runtime은 아직 실행하지 못했다. 문법, YAML, Markdown links, source/checkpoint hash는 검증했다. 실제 Ubuntu GPU/ROS2 환경에서 runtime 검증이 남아 있다.
+Nuvo `.venv`의 torch/cv2/timm, 실제 RTX A5000, ROS2 BayerRG8 camera runtime을 검증했다.
 
 ## 10. 주요 문서
 
+- `RESULTS_2026-09-14.md`: 오늘 최종 보존한 두 실험의 짧은 요약과 바로가기
 - `README.md`: portable 설치와 실행
 - `docs/REAL_CAMERA_A2_21FPS_EXPERIMENT.md`: 현재 실험 설계
 - `docs/SENIOR_CODE_STRUCTURE_KR.md`: 선배 저장소 전체 구조 설명
 - `docs/UPSTREAM_MANIFEST.md`: 복사 파일/해시/출처
 - `senior_code/COPY_MANIFEST.sha256`: portable source/checkpoint 무결성
+- `outputs/real_camera_1280x720_exp15000_fp32_60s/RESULT.md`: 1280×720, 15000 µs 60초 결과 보고서
+- `outputs/real_camera_1280x720_exp25000_visual_60s/RESULT.md`: 25000 µs 모니터 재촬영 60초 화면/반응성 보고서
 
 ## 11. 다음 세션이 지켜야 할 방향
 
-1. 사용자가 구현을 요청하면 OpenCV UVC runner를 최종 답으로 두지 말고 ROS2 Humble `camera_aravis2` 한 대 입력으로 연결한다.
+1. 최종 1280×720 hardware-ROI 60초 baseline은 통과했다. 다음 throughput 단계는 같은 경로의 300초 thermal run이다.
 2. hardware ROI가 확정되지 않았으면 FOV/calibration 없이 임의로 `1280×250` 중앙 crop을 정확도-valid 경로라고 단정하지 않는다.
 3. acquisition은 이미 검증됐으므로 측정 초점은 preprocessing, CPU→GPU transfer, backbone, 21-frame A2, end-to-end output rate다.
 4. throughput 21 FPS 통과와 a₂ 실제 정확도를 별도 결과로 보고한다.

@@ -6,14 +6,21 @@ senior_source:
   a2_model_file: src/model/image_models/a2_model.py
   a2_model_sha256: 6763cfe442ec7be32eb22d0873b2d8b8577073b3d1f435fb6878d99337c2f5a0
 camera:
-  current_adapter: opencv_uvc_prototype
-  final_adapter: camera_aravis2_ros2_bayerrg8_pending
-  index: 0
+  current_adapter: camera_aravis2_ros2_bayerrg8
+  fallback_adapter: opencv_uvc_prototype
+  ros_topic: /camera_driver_gv/vis/image_raw
+  guid: 192.168.1.51
+  transport_width: 1280
+  transport_height: 720
+  transport_offset: [320, 240]
+  transport_packet_bytes: 1500
   requested_width: 1280
   requested_height: 720
   requested_fps: 21.0
-  timestamp: host_capture_completion
-  color_from_camera: bgr
+  timestamp: ros_header_for_history_and_host_callback_for_local_latency
+  color_from_camera: BayerRG8_debayered_to_bgr_by_cv_bridge
+  exposure_time_us: 15000.0
+  throughput_geometry_adapter: hardware_1280x720_then_crop_y_235_485
 input:
   color_to_model: rgb
   roi_y: [235, 485]

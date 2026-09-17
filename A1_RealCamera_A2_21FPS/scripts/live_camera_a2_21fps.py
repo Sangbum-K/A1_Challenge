@@ -1,19 +1,11 @@
 """Physical-camera throughput test for the production 21-frame a2 path.
 
-This script intentionally stops at a2. It does not load f1/f2, ROS, MORAI, a
+This script intentionally stops at a2. It does not load f1/f2, MORAI, a
 raceline, or a pedal controller.
 
-TODO(Nuvo / final camera input):
-  현재 camera 입력부는 OpenCV UVC prototype이다. Nuvo PC에서 실제 실험하기 전에
-  camera_aravis2의 ROS2 sensor_msgs/Image(BayerRG8)를 구독하고,
-  BayerRG8 -> debayer -> RGB uint8 -> normalized RGB tensor 경로를 구현해야 한다.
-  가능하면 Hikrobot hardware ROI에서 1280x250을 직접 받아 resize를 피하되,
-  OffsetX/OffsetY와 FOV가 학습 카메라 입력과 맞는지 먼저 확인한다.
-  ROS2 subscriber는 오래된 frame이 쌓이지 않도록 queue depth 1/latest-frame 방식으로
-  구성하고, ROS header timestamp부터 a2 완료까지의 latency도 기록한다.
-
 Pipeline:
-  UVC camera -> BGR/RGB -> 250x1280 ROI -> ImageNet normalization
+  camera_aravis2/ROS2 BayerRG8 (or UVC prototype) -> debayer/BGR/RGB
+  -> 250x1280 ROI -> ImageNet normalization
   -> segmentation-pretrained EfficientNetV2-S last feature
   -> raw i1 token (40,C) -> timestamp history (current + 20 target ages)
   -> A2ModelMultiFrame.forward_tokens -> a2 logits (40,7)
@@ -76,12 +68,18 @@ A2_SCALE_DIST = 40.0
 CENTER_BIN0 = 16
 CENTER_BIN1 = 26  # exclusive; bins 16..25
 DISPLAY_PANEL_H = 190
-DISPLAY_WINDOW = "real camera + a2 (40-bin diagnostic)"
+DISPLAY_WINDOW = "raw camera 1280x720 + a2 diagnostics"
 
 
 def parse_args():
     ap = argparse.ArgumentParser(
-        description="실물 UVC 카메라 -> production mf20 a2의 21 FPS 가능성 측정")
+        description="실물 camera_aravis2/ROS2 카메라 -> production mf20 a2 21 FPS 측정")
+    ap.add_argument("--input", choices=["ros2", "uvc"], default="ros2",
+                    help="최종 실험은 ros2; uvc는 기존 prototype 확인용")
+    ap.add_argument("--ros-topic", default="/camera_driver_gv/vis/image_raw",
+                    help="camera_aravis2 sensor_msgs/Image topic")
+    ap.add_argument("--ros-node-name", default="live_camera_a2_21fps",
+                    help="ROS2 subscriber node name")
     ap.add_argument("--camera", type=int, default=0, help="OpenCV camera index")
     ap.add_argument("--camera-backend", choices=["auto", "avfoundation", "v4l2"], default="auto")
     ap.add_argument("--width", type=int, default=EXPECTED_W)
@@ -104,6 +102,10 @@ def parse_args():
     ap.add_argument("--roi-y1", type=int, default=ROI_Y1)
     ap.add_argument("--allow-resize", action="store_true",
                     help="camera가 요청 해상도를 주지 않을 때 resize. geometry가 달라져 정확도 평가는 무효")
+    ap.add_argument("--geometry-valid-for-accuracy", action="store_true",
+                    help="calibration/FOV/mount까지 검증된 경우만 명시. 단순 shape 일치는 불충분")
+    ap.add_argument("--geometry-note", default="uncalibrated physical-camera geometry; throughput only",
+                    help="summary.json에 기록할 geometry 근거/제약")
     ap.add_argument("--obj-thr", type=float, default=0.5)
     ap.add_argument("--display-min-prob", type=float, default=0.10,
                     help="overlay에 희미하게 표시할 최소 object probability")
@@ -295,6 +297,7 @@ class LatestFrameCamera:
         if hasattr(cv2, "CAP_PROP_BUFFERSIZE"):
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self._negotiated = {
+            "transport": "OpenCV UVC prototype",
             "width": int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
             "height": int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
             "fps_reported": float(self.cap.get(cv2.CAP_PROP_FPS)),
@@ -328,7 +331,9 @@ class LatestFrameCamera:
                 break
             with self.condition:
                 self.seq += 1
-                self.latest = (self.seq, captured_at, frame)
+                # UVC has no sensor/header timestamp. Use the host capture-
+                # completion clock for both history selection and latency.
+                self.latest = (self.seq, captured_at, captured_at, frame)
                 self.capture_times.append(captured_at)
                 self.condition.notify_all()
 
@@ -356,6 +361,149 @@ class LatestFrameCamera:
             self.condition.notify_all()
         if self.thread is not None:
             self.thread.join(timeout=2.0)
+
+    @property
+    def timestamp_note(self):
+        return (
+            "OpenCV supplies a host capture-completion timestamp, not the sensor exposure "
+            "timestamp; true sensor-to-a2 latency requires the ROS2 camera path."
+        )
+
+
+class LatestROSFrame:
+    """Subscribe with sensor-data QoS and retain only the latest ROS image."""
+
+    def __init__(self, topic: str, node_name: str, expected_fps: float):
+        try:
+            import rclpy
+            from cv_bridge import CvBridge
+            from rclpy.executors import SingleThreadedExecutor
+            from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+            from sensor_msgs.msg import Image
+        except ImportError as exc:
+            raise RuntimeError(
+                "ROS2 Python modules are unavailable. Source /opt/ros/humble/setup.bash "
+                "before activating the project .venv."
+            ) from exc
+
+        self._rclpy = rclpy
+        self._executor_type = SingleThreadedExecutor
+        self._bridge = CvBridge()
+        self._topic = topic
+        self._node_name = node_name
+        self._image_type = Image
+        self._qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+        )
+        self.condition = threading.Condition()
+        self.latest = None
+        self.seq = 0
+        self.running = False
+        self.error = None
+        self.capture_times = deque(maxlen=max(5000, int(expected_fps * 600)))
+        self.thread = None
+        self.node = None
+        self.executor = None
+        self.subscription = None
+        self._negotiated = {
+            "transport": "camera_aravis2/ROS2",
+            "topic": topic,
+            "qos": "sensor-data keep-last depth=1 best-effort",
+        }
+
+    @property
+    def negotiated(self):
+        return dict(self._negotiated)
+
+    @property
+    def timestamp_note(self):
+        return (
+            "History ages use the ROS header timestamp. capture_to_a2_ms_host starts at "
+            "subscriber callback arrival; capture_to_a2_ms_header uses the ROS header clock "
+            "and is meaningful only when camera/PTP and host clocks are synchronized."
+        )
+
+    def start(self):
+        if not self._rclpy.ok():
+            self._rclpy.init(args=None)
+        self.node = self._rclpy.create_node(self._node_name)
+        self.subscription = self.node.create_subscription(
+            self._image_type, self._topic, self._callback, self._qos)
+        self.executor = self._executor_type()
+        self.executor.add_node(self.node)
+        self.running = True
+        self.thread = threading.Thread(target=self._spin, name="ros2-image-subscription", daemon=True)
+        self.thread.start()
+
+    def _spin(self):
+        try:
+            while self.running and self._rclpy.ok():
+                self.executor.spin_once(timeout_sec=0.1)
+        except Exception as exc:  # surfaced to the inference thread
+            self.error = f"ROS2 executor failed: {exc}"
+            with self.condition:
+                self.condition.notify_all()
+
+    def _callback(self, msg):
+        host_received_at = time.perf_counter()
+        try:
+            frame = self._bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+            if frame.dtype != np.uint8 or frame.ndim != 3 or frame.shape[2] != 3:
+                raise RuntimeError(
+                    f"cv_bridge returned dtype={frame.dtype}, shape={frame.shape}; expected BGR8")
+            header_stamp = float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9
+            source_stamp = header_stamp if header_stamp > 0.0 else host_received_at
+        except Exception as exc:
+            self.error = f"cannot convert ROS image encoding={msg.encoding!r}: {exc}"
+            with self.condition:
+                self.condition.notify_all()
+            return
+        with self.condition:
+            self.seq += 1
+            self.latest = (self.seq, source_stamp, host_received_at, frame)
+            self.capture_times.append(host_received_at)
+            self._negotiated.update({
+                "width": int(msg.width),
+                "height": int(msg.height),
+                "encoding": str(msg.encoding),
+                "step": int(msg.step),
+                "frame_id": str(msg.header.frame_id),
+                "header_timestamp_available": header_stamp > 0.0,
+            })
+            self.condition.notify_all()
+
+    def get_after(self, seq: int, timeout: float = 2.0):
+        deadline = time.perf_counter() + timeout
+        with self.condition:
+            while self.running and not self.error and (self.latest is None or self.latest[0] <= seq):
+                remaining = deadline - time.perf_counter()
+                if remaining <= 0:
+                    return None
+                self.condition.wait(remaining)
+            if self.error or self.latest is None or self.latest[0] <= seq:
+                return None
+            return self.latest
+
+    def reset_measurement(self):
+        with self.condition:
+            self.capture_times.clear()
+            return self.latest[0] if self.latest is not None else 0
+
+    def stop(self):
+        self.running = False
+        with self.condition:
+            self.condition.notify_all()
+        if self.thread is not None:
+            self.thread.join(timeout=2.0)
+        if self.executor is not None and self.node is not None:
+            self.executor.remove_node(self.node)
+        if self.node is not None:
+            self.node.destroy_node()
+        if self._rclpy.ok():
+            self._rclpy.shutdown()
 
 
 def select_history(history, current_time: float):
@@ -534,30 +682,40 @@ def _draw_vrel_arrow(image, center, value):
 
 
 def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: float):
-    """Render model-aligned diagnostics; this function does not alter inference."""
+    """Render diagnostics over the full, unresized camera frame.
+
+    The green outline is the actual model crop.  Red tint represents only the
+    lateral A2 bins and must not be interpreted as a 2-D detection box.
+    """
     shown = frame_bgr.copy()
     height, width = shown.shape[:2]
     roi_y0, roi_y1 = args.roi_y0, args.roi_y1
     prob = decoded["object_probability"]
 
     # A2 retained only lateral location, so each probability is drawn as a
-    # vertical strip across the model ROI rather than as a fake 2-D box/mask.
+    # light vertical strip across the model ROI rather than as a fake 2-D box.
+    # Keeping the tint light preserves the appearance of the received frame.
     for index, value in enumerate(prob):
         if value < args.display_min_prob:
             continue
         x0, x1 = _bin_x(index, width), _bin_x(index + 1, width)
-        alpha = min(0.55, 0.06 + 0.49 * float(value))
+        alpha = min(0.32, 0.04 + 0.28 * float(value))
         region = shown[roi_y0:roi_y1, x0:x1]
         red = np.zeros_like(region)
         red[:, :, 2] = 255
         cv2.addWeighted(red, alpha, region, 1.0 - alpha, 0.0, dst=region)
 
-    for index in range(N_BINS + 1):
-        x = _bin_x(index, width)
-        color = (105, 105, 105) if index % 5 else (180, 180, 180)
-        cv2.line(shown, (x, roi_y0), (x, roi_y1), color, 1, cv2.LINE_AA)
-    cv2.rectangle(shown, (_bin_x(CENTER_BIN0, width), roi_y0),
-                  (_bin_x(CENTER_BIN1, width) - 1, roi_y1 - 1), (0, 255, 255), 3)
+    # The whole received 1280x720 frame stays visible.  Only this full-width
+    # 1280x250 region is cropped and normalized for the backbone.
+    cv2.rectangle(shown, (0, roi_y0), (width - 1, roi_y1 - 1), (0, 255, 0), 2)
+    _put_text_box(
+        shown,
+        f"MODEL INPUT CROP x=0:{width}, y={roi_y0}:{roi_y1} "
+        f"({width}x{roi_y1 - roi_y0})",
+        (12, roi_y0 - 8),
+        color=(80, 255, 80),
+        scale=0.52,
+    )
 
     # One label per contiguous object-positive group avoids printing 5-10
     # duplicate distance values on a single wide vehicle.
@@ -582,6 +740,8 @@ def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: 
     steady = record["history_span_s"] >= PREV_AGES_S[-1]
     state = "READY 21/21" if steady else f"HISTORY WARMUP {record['history_span_s']:.2f}/1.00s"
     top_lines = [
+        f"RAW CAMERA INPUT {width}x{height} | full frame shown | software resize: "
+        f"{'YES' if record['resized'] else 'NO'}",
         f"A2 output {fps_recent:5.1f} FPS | model compute {record['compute_ms']:5.1f} ms | "
         f"capture->A2 {record['capture_to_a2_ms_host']:5.1f} ms",
         f"{state} | unique past {record['history_unique_sources']:02d}/20 | "
@@ -589,7 +749,7 @@ def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: 
     ]
     for line_index, line in enumerate(top_lines):
         _put_text_box(shown, line, (15, 28 + line_index * 28),
-                      color=(80, 255, 80) if line_index == 0 else (255, 255, 255), scale=0.56)
+                      color=(80, 255, 80) if line_index <= 1 else (255, 255, 255), scale=0.56)
 
     panel = np.full((DISPLAY_PANEL_H, width, 3), 20, dtype=np.uint8)
     cell_y0, cell_y1 = 34, 70
@@ -613,8 +773,10 @@ def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: 
         cv2.rectangle(panel, (x0 + 2, y), (max(x0 + 2, x1 - 2), bar_base), (40, 210, 210), -1)
     cv2.putText(panel, "PROXIMITY (a2[:,5], display-clamped 0..1)", (12, 99),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.48, (210, 210, 210), 1, cv2.LINE_AA)
-    cv2.putText(panel, "yellow = fixed center bins 16..25 (NOT lane detection) | red left: approaching | blue right: receding",
-                (12, 186), cv2.FONT_HERSHEY_SIMPLEX, 0.46, (190, 190, 190), 1, cv2.LINE_AA)
+    cv2.putText(
+        panel,
+        "yellow outline = lead-search bins 16..25 (not crop/box/lane) | red left: approaching | blue right: receding",
+        (12, 186), cv2.FONT_HERSHEY_SIMPLEX, 0.43, (190, 190, 190), 1, cv2.LINE_AA)
     return np.vstack((shown, panel))
 
 
@@ -640,6 +802,10 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
     capture_fps = (len(cap_times) - 1) / cap_elapsed if cap_elapsed > 0 else 0.0
     compute = [r["compute_ms"] for r in basis]
     capture_to_a2 = [r["capture_to_a2_ms_host"] for r in basis]
+    capture_to_a2_header = [
+        r["capture_to_a2_ms_header"] for r in basis
+        if r["capture_to_a2_ms_header"] is not None
+    ]
     capture_to_output = [r["capture_to_output_ms_host"] for r in basis]
     preprocess = [r["preprocess_ms"] for r in basis]
     backbone = [r["backbone_ms"] for r in basis]
@@ -699,6 +865,7 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
         "capture_fps_host_observed": capture_fps,
         "a2_output_fps_steady": output_fps,
         "capture_to_a2_ms_host": latency_stats(capture_to_a2),
+        "capture_to_a2_ms_header": latency_stats(capture_to_a2_header),
         "capture_to_output_ms_host": latency_stats(capture_to_output),
         "compute_ms": latency_stats(compute),
         "stage_ms": {
@@ -720,7 +887,9 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
         "history_duplicate_slot_ratio": duplicate_ratio,
         "nan_or_inf_frames": nan_frames,
         "resized_any_frame": resized_any,
-        "geometry_valid_for_accuracy": not resized_any,
+        "geometry_valid_for_accuracy": bool(
+            args.geometry_valid_for_accuracy and not resized_any),
+        "geometry_note": args.geometry_note,
         "visualization": {
             "display_enabled": bool(args.display),
             "video_enabled": bool(args.save_overlay_video),
@@ -737,9 +906,7 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
             "sustained_a2_21fps": end_to_end_pass,
         },
         "likely_bottleneck": bottleneck,
-        "timestamp_note": (
-            "OpenCV supplies a host capture-completion timestamp, not the sensor exposure timestamp; "
-            "true sensor-to-a2 latency needs a camera SDK or hardware timestamp."),
+        "timestamp_note": camera.timestamp_note,
     }
 
 
@@ -765,8 +932,11 @@ def main():
         for parameter in module.parameters():
             parameter.requires_grad_(False)
 
-    camera = LatestFrameCamera(
-        args.camera, args.camera_backend, args.width, args.height, args.camera_fps)
+    if args.input == "ros2":
+        camera = LatestROSFrame(args.ros_topic, args.ros_node_name, args.camera_fps)
+    else:
+        camera = LatestFrameCamera(
+            args.camera, args.camera_backend, args.width, args.height, args.camera_fps)
     print(f"[camera] negotiated={camera.negotiated}", flush=True)
     print(f"[model] device={device} seg={seg_load} a2={a2_load}", flush=True)
     camera.start()
@@ -786,7 +956,7 @@ def main():
         first = camera.get_after(last_seq, timeout=5.0)
         if first is None:
             raise RuntimeError(camera.error or "no camera frame received within 5 seconds")
-        last_seq, _, first_frame = first
+        last_seq, _, _, first_frame = first
         print(f"[warmup] iterations={args.warmup_iters}", flush=True)
         warmup(first_frame, args, device, backbone, a2)
         last_seq = camera.reset_measurement()
@@ -800,7 +970,7 @@ def main():
                     if camera.error:
                         raise RuntimeError(camera.error)
                     continue
-                seq, captured_at, frame = item
+                seq, source_stamp, host_received_at, frame = item
                 skipped = max(0, seq - last_seq - 1)
                 last_seq = seq
                 started = time.perf_counter()
@@ -817,14 +987,15 @@ def main():
                 sync_device(device)
                 backbone_done = time.perf_counter()
 
-                history.append((seq, captured_at, token[0].detach()))
-                past, age_errors_ms, source_seqs = select_history(history, captured_at)
+                history.append((seq, source_stamp, token[0].detach()))
+                past, age_errors_ms, source_seqs = select_history(history, source_stamp)
                 token_list = [token] + past
                 ego_zero = torch.zeros(1, 2, dtype=token.dtype, device=device)
                 with torch.inference_mode(), autocast_context(device, amp_enabled):
                     logits = a2.forward_tokens(token_list, ego_zero)
                 sync_device(device)
                 a2_done = time.perf_counter()
+                a2_done_wall = time.time()
 
                 finite = bool(torch.isfinite(logits).all())
                 if not finite:
@@ -843,14 +1014,18 @@ def main():
                     "error": "a2 output contains NaN or Inf",
                 }
                 completed = time.perf_counter()
-                history_span = captured_at - history[0][1]
+                history_span = source_stamp - history[0][1]
+                header_available = bool(camera.negotiated.get("header_timestamp_available", False))
                 skipped_total += skipped
                 record = {
                     "seq": seq,
-                    "captured_at": captured_at,
+                    "source_timestamp": source_stamp,
+                    "host_received_at": host_received_at,
                     "completed_at": completed,
-                    "capture_to_a2_ms_host": (a2_done - captured_at) * 1000.0,
-                    "capture_to_output_ms_host": (completed - captured_at) * 1000.0,
+                    "capture_to_a2_ms_host": (a2_done - host_received_at) * 1000.0,
+                    "capture_to_a2_ms_header": (
+                        (a2_done_wall - source_stamp) * 1000.0 if header_available else None),
+                    "capture_to_output_ms_host": (completed - host_received_at) * 1000.0,
                     "preprocess_ms": (preprocessed - started) * 1000.0,
                     "backbone_ms": (backbone_done - preprocessed) * 1000.0,
                     "a2_ms": (a2_done - backbone_done) * 1000.0,

@@ -15,13 +15,13 @@
 
 또한 upstream `closed_loop_node.py`에는 `INFER_RATE_HZ=20` cap이 있으므로 그 node를 그대로 사용하면 21 FPS를 증명할 수 없다. 본 프로젝트의 실카메라 runner는 f₁/f₂와 이 cap을 제거한 상태에서 a₂까지의 순수 output rate를 잰다.
 
-모델 구현을 다시 작성한 것은 아니다. runner는 프로젝트 내부에 그대로 복사된 `senior_code/src/model/image_models/a2_model.py`의 `A2ModelMultiFrame`을 import하고, 함께 복사된 seg/a₂ checkpoint를 load한다. 새로 작성한 부분은 UVC camera adapter, timestamp history sampler와 계측 코드뿐이다. 실행 결과에는 모델 원본 파일과 두 checkpoint의 SHA-256이 기록된다.
+모델 구현을 다시 작성한 것은 아니다. runner는 프로젝트 내부에 그대로 복사된 `senior_code/src/model/image_models/a2_model.py`의 `A2ModelMultiFrame`을 import하고, 함께 복사된 seg/a₂ checkpoint를 load한다. 새로 작성한 부분은 `camera_aravis2` ROS2 subscriber, timestamp history sampler와 계측 코드뿐이다. UVC는 fallback prototype으로만 남아 있다. 실행 결과에는 모델 원본 파일과 두 checkpoint의 SHA-256이 기록된다.
 
 ## 2. 실험 범위
 
 ### 포함
 
-- 실물 USB/UVC camera capture
+- Hikrobot GigE camera와 `camera_aravis2` ROS2 BayerRG8 수신
 - 실제 전달 해상도와 frame interval
 - BGR→RGB
 - 720×1280 입력과 `y=235:485` ROI
@@ -70,8 +70,8 @@
 ## 4. System Under Test
 
 ```text
-Camera capture thread
-  │ latest frame only + host timestamp
+camera_aravis2 → ROS2 subscriber
+  │ sensor-data QoS, latest frame only + ROS header timestamp
   ▼
 Geometry guard
   │ expected 1280×720; resize는 throughput-only
@@ -101,15 +101,19 @@ a₂ logits (1,40,7)
 
 ### Camera timestamp
 
-OpenCV UVC 입력은 일반적으로 sensor exposure timestamp를 주지 않는다. runner의 `captured_at`은 host에서 `read()`가 끝난 시각이다.
+현재 Hikrobot ROS2 경로는 `sensor_msgs/Image` header timestamp를 history 구성에 사용하고,
+subscriber callback 도착 시각을 host-local latency 시작점으로 사용한다. OpenCV UVC fallback은
+일반적으로 sensor exposure timestamp를 주지 않으므로 host에서 `read()`가 끝난 시각만 사용한다.
 
-따라서 이 실험에서 측정하는 `capture_to_a2_ms_host`는:
+따라서 `capture_to_a2_ms_host`는:
 
 ```text
-host capture completion → a₂ output ready
+ROS subscriber callback arrival → a₂ output ready
 ```
 
-이다. 진짜 photon/exposure-to-output latency는 camera SDK의 hardware timestamp나 LED/photodiode 방식이 필요하다.
+이다. `capture_to_a2_ms_header`는 ROS header clock과 host clock이 동기화됐을 때만 해석한다.
+진짜 photon/exposure-to-output latency는 camera hardware timestamp의 동기화나 LED/photodiode
+방식이 필요하다.
 
 ### Steady state
 
@@ -360,15 +364,27 @@ outputs/<run_id>/
 
 ### fp32 baseline
 
+Terminal 1:
+
 ```bash
+source scripts/activate_nuvo_env.sh
+ros2 launch launch/hikrobot_a2_camera_1280x720.launch.py \
+  guid:=192.168.1.51 exposure_us:=15000
+```
+
+Terminal 2:
+
+```bash
+source scripts/activate_nuvo_env.sh
 python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
+  --input ros2 \
+  --ros-topic /camera_driver_gv/vis/image_raw \
   --camera-fps 21 \
   --target-fps 21 \
   --width 1280 \
   --height 720 \
-  --seg-ckpt /path/to/seg_backbone.pt \
-  --a2-ckpt /path/to/a2_mf20.pt \
+  --seg-ckpt senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt \
+  --a2-ckpt senior_code/data/ckpts/a2_mf20_v2s_n20.pt \
   --duration 60 \
   --output-dir outputs/fp32_60s
 ```
@@ -377,11 +393,12 @@ python scripts/live_camera_a2_21fps.py \
 
 ```bash
 python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
+  --input ros2 \
+  --ros-topic /camera_driver_gv/vis/image_raw \
   --camera-fps 21 \
   --target-fps 21 \
-  --seg-ckpt /path/to/seg_backbone.pt \
-  --a2-ckpt /path/to/a2_mf20.pt \
+  --seg-ckpt senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt \
+  --a2-ckpt senior_code/data/ckpts/a2_mf20_v2s_n20.pt \
   --duration 60 \
   --amp \
   --output-dir outputs/amp_60s
@@ -391,11 +408,12 @@ python scripts/live_camera_a2_21fps.py \
 
 ```bash
 python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
+  --input ros2 \
+  --ros-topic /camera_driver_gv/vis/image_raw \
   --camera-fps 21 \
   --target-fps 21 \
-  --seg-ckpt /path/to/seg_backbone.pt \
-  --a2-ckpt /path/to/a2_mf20.pt \
+  --seg-ckpt senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt \
+  --a2-ckpt senior_code/data/ckpts/a2_mf20_v2s_n20.pt \
   --duration 300 \
   --amp \
   --output-dir outputs/amp_300s
@@ -404,18 +422,10 @@ python scripts/live_camera_a2_21fps.py \
 ### 실시간 화면과 A₂ overlay
 
 ```bash
-python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
-  --camera-fps 21 \
-  --target-fps 21 \
-  --seg-ckpt senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt \
-  --a2-ckpt senior_code/data/ckpts/a2_mf20_v2s_n20.pt \
-  --duration 60 \
-  --display \
-  --log-full-a2 \
-  --save-overlay-video \
-  --output-dir outputs/a2_visual_60s
+scripts/run_live_visualization.sh 60 outputs/a2_visual_60s 25000 1 1
 ```
+
+인자는 `실행 초`, `결과 폴더`, `노출 µs`, `full A₂ log`, `overlay MP4 저장` 순서다.
 
 ## 12. 중요한 해석 주의사항
 
@@ -434,7 +444,11 @@ python scripts/live_camera_a2_21fps.py \
 - 21-frame timestamp sampler와 startup/steady 분리 구현 완료
 - stage latency/throughput/history 품질 logging 구현 완료
 - 실시간 RGB+A₂ 40-bin overlay와 선택적 MP4/full-output logging 구현 완료
-- Python 정적 문법 검증 가능
-- 현재 workspace에는 PyTorch와 연결된 실물 camera/checkpoint가 준비되지 않아 실제 21 FPS 결과는 아직 없음
+- Nuvo `.venv`, CUDA 11.8, RTX A5000과 bundled checkpoint 검증 완료
+- 실제 Hikrobot BayerRG8 1280×720 receipt, debayer, QoS와 sustained runtime 검증 완료
+- 15000 µs FP32 60초 처리량: a₂ 20.998 FPS, compute p95 15.214 ms, 유실 0, PASS
+- 25000 µs 화면/MP4/full-log 60초: a₂ 20.996 FPS, 처리량 PASS, 화면 반응성 PARTIAL
 
-따라서 다음 실제 작업은 새 모델 학습이 아니라, 목표 hardware에서 fp32 60초 baseline을 실행해 `summary.json`을 얻는 것이다.
+최종 결과와 산출물은 [2026-09-14 실험 요약](../RESULTS_2026-09-14.md)에서 확인한다.
+다음 처리량 단계는 300초 thermal run이고, 정확도 단계는 calibration/FOV 정합과 실제
+timestamped 거리·속도 GT 수집이다.
