@@ -7,7 +7,9 @@
 - LiDAR/GNSS 드라이버는 통합 workspace의 `src/external`, `src/localization`에서 한 번만 실행한다.
 - `A1_FUSION_TRANSPORT=bridge`는 이전 domain107 격리 경로이며 LiDAR만 전달한다.
 - 카메라 A₂ → association 동일 대상 추적 → shadow P5. 차량 CAN 명령을 보내지 않는다.
-- `/gnss/imu` 공급, 장착/시각/운동 검증은 미완료다. 직접 구독으로 이를 검증된 상태로 바꾸지 않는다.
+- 기본 자차 입력은 `/a1_gnss/odom` + GSOF #49 정렬 상태다(`ego_source: gnss_odom`).
+  장착·시각·운동 검증은 미완료이며 `gnss_odom_verified`와 기존 검증 플래그는 false다.
+  `/gnss/imu` 적분은 명시적으로 선택하는 실험 모드이며 자동 fallback하지 않는다.
 
 ```bash
 cd /home/ailab/git/A1_Total
@@ -35,6 +37,14 @@ bash src/perception/sensor_fusion/run_sensor_fusion.sh
 기존 카메라 기반 대상 선택·얇은 후면 허용·0.3초 freshness·미검증 보정 상태를 유지한다.
 합성 회전 차량/과대 물체 및 ROS 매칭 회귀 시험으로 확인한다. 해당 주행의 원시 점군이 없어
 영상 속 실패가 이 변경으로 해결됐는지 재처리 검증은 불가능하며, 투영 오차는 별도 실측 보정이 필요하다.
+
+2026-11-05 후면→측면 전환 연결 개선: 최신 카메라 영역과 현재 LiDAR 군집이 일대일로
+대응하고 이전 영역과 연속될 때, 확인된 트랙의 형상 변화에 따른 측정 불확실성을
+연결 판정 전에 적용한다. 원시 관측 박스를 카메라 대응에 사용하고, 크기 변화 직후에는
+ID가 유지되어도 속도 재확인 동안 shadow P5 출력을 무효화한다. A₂ 영역은 영속적인
+카메라 ID가 아니며, 가림·교차 장면은 여전히 모호할 수 있다. fragment 병합의 축 정렬
+폭 제한과 관측 표면 중심 이동에 따른 속도 오차는 후속 개선 대상이다. 합성 시험을
+통과했으며 실차 코너 주행의 추적률과 상대속도 정확도는 검증되지 않았다.
 
 맵 기반 필터: localization이 선택한 동일 맵의 바닥·수직 평면 후보를 해시 검증 후
 연결한다. 최근 ICP 품질과 라이다 시각의 TF가 없으면 기존 필터로 우회한다.

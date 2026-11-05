@@ -13,7 +13,8 @@ a1_association:
     camera_fy: 640.0
     camera_cx: 640.0
     camera_cy: 360.0
-    sensor_height_m: 1.8
+    # Existing vehicle_extrinsics.yaml: LiDAR z=1.20m above ground.
+    sensor_height_m: 1.2
     calibration_verified: false
     clock_verified: false
     lidar_time_offset_s: 0.0

@@ -75,7 +75,7 @@ class AssociationNode:public rclcpp::Node {
       auto detail=std::filesystem::path(csv);detail.replace_extension("tracks.csv");track_csv_.open(detail);if(!track_csv_)throw std::runtime_error("cannot open track diagnostics");
       track_csv_<<"stamp,id,measured,hits,age_s,geometry,reason,raw_x,raw_y,raw_z,raw_dx,raw_dy,raw_dz,points,x,y,z,range_m,vx,vy,var_x,var_y,projectable,u0,v0,u1,v1,best_iou,best_region,camera_matched,selected,footprint_valid,footprint_length_m,footprint_width_m,footprint_yaw_rad\n";}
     if(!preview_.empty())std::filesystem::create_directories(std::filesystem::path(preview_).parent_path());
-    patchwork::Params p;p.sensor_height=declare_parameter("sensor_height_m",1.8);p.min_range=1.;
+    patchwork::Params p;p.sensor_height=declare_parameter("sensor_height_m",1.2);p.min_range=1.;
     if(!std::isfinite(val("processing_range_m"))||val("processing_range_m")<val("target_max_range_m")||val("processing_range_m")>150)throw std::runtime_error("invalid processing range");
     p.max_range=val("processing_range_m");
     p.verbose=false;p.enable_RNR=false; // XYZ only: do not invent intensity for reflection-noise removal.
@@ -213,9 +213,10 @@ class AssociationNode:public rclcpp::Node {
       merged.push_back(b);merged_groups.push_back(g);
     }
     boxes=std::move(merged);groups=std::move(merged_groups);
-    const auto& tracks=tracker_.update(t,boxes);
-    cv::Mat view=im?cv_bridge::toCvCopy(im,"bgr8")->image:cv::Mat::zeros(720,1280,CV_8UC3);
-    if(view.cols!=1280||view.rows!=720)throw std::runtime_error("expected 1280x720 camera ROI");
+    const bool render=render_needed();
+    cv::Mat view;
+    if(render)view=im?cv_bridge::toCvCopy(im,"bgr8")->image:cv::Mat::zeros(720,1280,CV_8UC3);
+    if(im&&(im->width!=1280||im->height!=720))throw std::runtime_error("expected 1280x720 camera ROI");
     auto pos=get_parameter("camera_position_m").as_double_array(),angles=get_parameter("camera_rpy_rad").as_double_array();
     if(pos.size()!=3||angles.size()!=3)throw std::runtime_error("camera mount requires xyz/rpy triples");
     Eigen::Vector3d camera(pos[0],pos[1],pos[2]);Eigen::Matrix3d optical=nominal_optical_from_body();
@@ -238,10 +239,26 @@ class AssociationNode:public rclcpp::Node {
       presence=!regions_.empty();
       // Legacy scalar bin fields only describe a genuinely single camera region.
       if(regions_.size()==1){result.bin_left=regions_[0].left;result.bin_right=regions_[0].right;}
-      for(const auto& region:regions_)cv::rectangle(view,cv::Rect(region.left*32,235,(region.right-region.left+1)*32,250),cv::Scalar(0,230,230),2);
-      for(int j=0;j<40;++j){int bar=int(50*probabilities_[j]);if(bar>0)cv::rectangle(view,cv::Rect(j*32,710-bar,30,bar),cv::Scalar(40,200,40),-1);}
+      if(render)for(const auto& region:regions_)cv::rectangle(view,cv::Rect(region.left*32,235,(region.right-region.left+1)*32,250),cv::Scalar(0,230,230),2);
+      if(render)for(int j=0;j<40;++j){int bar=int(50*probabilities_[j]);if(bar>0)cv::rectangle(view,cv::Rect(j*32,710-bar,30,bar),cv::Scalar(40,200,40),-1);}
     }else{regions_.clear();presence_stamp_=-1;probabilities_.fill(0);}
-    cv::Mat bev(720,480,CV_8UC3,cv::Scalar(20,20,20));const double range=val("bev_forward_range_m");if(range<20||range>150)throw std::runtime_error("BEV range must be 20..150 m");const double scale=600/range;auto pixel=[scale](double x,double y){return cv::Point(int(240-y*scale),int(680-x*scale));};
+    // Camera evidence must reach track association before an ID can be lost.
+    // Count all projected clusters as competitors, including rejected geometry.
+    Eigen::MatrixXd detection_overlaps=Eigen::MatrixXd::Zero(boxes.size(),regions_.size());
+    if(paired&&a->history_ready&&presence)for(size_t i=0;i<boxes.size();++i){
+      auto p=project(boxes[i],optical,camera,val("camera_fx"),val("camera_fy"),val("camera_cx"),val("camera_cy"),1280,720);
+      if(!p.valid||p.y1<235||p.y0>485)continue;
+      for(size_t j=0;j<regions_.size();++j)detection_overlaps(i,j)=horizontal_iou(p,regions_[j].left*32,(regions_[j].right+1)*32);
+    }
+    const auto detection_matches=unique_region_matches(detection_overlaps,val("horizontal_iou_threshold"));
+    std::vector<CameraSupport> camera_support(boxes.size());
+    for(size_t i=0;i<boxes.size();++i)if(detection_matches[i]>=0){
+      const auto& region=regions_[detection_matches[i]];
+      camera_support[i]={double(region.left*32),double((region.right+1)*32),stamp(a->header),true};
+    }
+    const auto& tracks=tracker_.update(t,boxes,camera_support);
+    cv::Mat bev;if(render)bev=cv::Mat(720,480,CV_8UC3,cv::Scalar(20,20,20));const double range=val("bev_forward_range_m");if(range<20||range>150)throw std::runtime_error("BEV range must be 20..150 m");const double scale=600/range;auto pixel=[scale](double x,double y){return cv::Point(int(240-y*scale),int(680-x*scale));};
+    if(render){
     for(int i=0;i<gp.rows();i+=3){auto q=gp.row(i);if(!in_front_half(q.cast<double>().transpose(),roi_angle))continue;auto uv=pixel(q.x(),q.y());if(uv.x>=0&&uv.x<480&&uv.y>=0&&uv.y<720)bev.at<cv::Vec3b>(uv)=cv::Vec3b(45,65,45);}
     for(int meters=10;meters<=int(range);meters+=10){auto pt=pixel(meters,0);if(pt.y<145)continue;cv::line(bev,{0,pt.y},{479,pt.y},{40,40,40},1);cv::putText(bev,std::to_string(meters)+"m",{5,pt.y-3},cv::FONT_HERSHEY_SIMPLEX,.4,{150,150,150},1);}
     cv::line(bev,{240,0},{240,719},{70,70,70});cv::circle(bev,pixel(0,0),6,{255,255,255},-1);
@@ -263,6 +280,7 @@ class AssociationNode:public rclcpp::Node {
         cv::line(bev,pixel(camera.x(),camera.y()),pixel(camera.x()+ray.x(),camera.y()+ray.y()),{0,220,220},u==val("camera_cx")?2:1);}
     }
     cv::circle(bev,pixel(camera.x(),camera.y()),4,{0,220,220},-1);
+    }
     const bool debug=get_parameter("show_debug_clusters").as_bool();
     std::vector<int64_t> candidates;
     std::vector<const Track*> eligible;
@@ -274,7 +292,7 @@ class AssociationNode:public rclcpp::Node {
     std::map<int64_t,double> best_iou;
     std::map<int64_t,int> best_region,matched_regions;
     for(const auto& tr:tracks){
-      projections[tr.id]=project(tr.box,optical,camera,val("camera_fx"),val("camera_fy"),val("camera_cx"),val("camera_cy"),1280,720);
+      projections[tr.id]=project(tr.measured?tr.raw_box:tr.box,optical,camera,val("camera_fx"),val("camera_fy"),val("camera_cx"),val("camera_cy"),1280,720);
       const auto geometry=std::string(vehicle_geometry_status(tr));
       auto& reason=reasons[tr.id];
       if(!vehicle_extent(tr.raw_box))reason="extent_exceeded";
@@ -321,6 +339,7 @@ class AssociationNode:public rclcpp::Node {
     pcl::PointCloud<pcl::PointXYZRGB> colored;
     for(auto& tr:tracks){auto p=projections.at(tr.id);
       a1_fusion_cpp::msg::ClusterTrack out;out.id=tr.id;out.measured=tr.measured;out.prediction_valid=tracker_.usable(tr,t);out.observation_age_s=std::max(0.,t-tr.last_seen);
+      out.motion_reacquiring=tr.shape_stable_updates<3;
       out.position_covariance_xy={tr.covariance(0,0),tr.covariance(0,1),tr.covariance(1,0),tr.covariance(1,1)};
       out.confirmed=tr.hits>=3;out.points=tr.measured?tr.box.points:0;auto center=tr.box.center();auto size=tr.box.hi-tr.box.lo;
       for(int k=0;k<3;++k){out.raw_center_m[k]=tr.raw_box.center()[k];out.raw_size_m[k]=(tr.raw_box.hi-tr.raw_box.lo)[k];out.center_m[k]=center[k];out.size_m[k]=size[k];}out.apparent_velocity_mps={tr.state[2],tr.state[3]};out.projectable=p.valid;out.image_box_xyxy={p.x0,p.y0,p.x1,p.y1};
@@ -339,10 +358,12 @@ class AssociationNode:public rclcpp::Node {
         track_csv_<<','<<out.range_m<<','<<tr.state[2]<<','<<tr.state[3]<<','<<tr.covariance(0,0)<<','<<tr.covariance(1,1)<<','<<p.valid<<','<<p.x0<<','<<p.y0<<','<<p.x1<<','<<p.y1<<','<<best_iou[tr.id]<<','<<(best_region.count(tr.id)?best_region.at(tr.id):-1)<<','<<candidate<<','<<visible<<','<<tr.raw_box.footprint.valid<<','<<tr.raw_box.footprint.length<<','<<tr.raw_box.footprint.width<<','<<tr.raw_box.footprint.yaw<<'\n';}
       auto col=!tr.measured&&visible?cv::Scalar(255,180,40):candidate?cv::Scalar(40,40,255):visible?cv::Scalar(255,180,40):cv::Scalar(100,100,100);
       std::string label="T"+std::to_string(tr.id)+" r="+cv::format("%.1f",out.range_m)+"m"+(tr.id==primary_id_?" PRIMARY":"")+(!tr.measured?" PREDICTED":candidate?" CAMERA+LIDAR":visible?" HELD - UNVERIFIED":" UNSELECTED");
+      if(render){
       auto raw_projection=project(tr.raw_box,optical,camera,val("camera_fx"),val("camera_fy"),val("camera_cx"),val("camera_cy"),1280,720);
       if(candidate&&raw_projection.valid)cv::rectangle(view,{int(raw_projection.x0),int(raw_projection.y0)},{int(raw_projection.x1),int(raw_projection.y1)},{130,130,130},1);
       if(p.valid&&(visible||debug)){cv::rectangle(view,{int(p.x0),int(p.y0)},{int(p.x1),int(p.y1)},col,candidate?3:2);cv::putText(view,label,{int(p.x0),std::max(85,int(p.y0)-5)},cv::FONT_HERSHEY_SIMPLEX,.45,col,1);}
       if(visible||debug){cv::rectangle(bev,pixel(tr.box.hi.x(),tr.box.hi.y()),pixel(tr.box.lo.x(),tr.box.lo.y()),col,candidate?3:1);cv::putText(bev,"T"+std::to_string(tr.id),pixel(center.x(),center.y()),cv::FONT_HERSHEY_SIMPLEX,.45,col,1);}
+      }
       result.tracks.push_back(out);
       if(clusters_pub_->get_subscription_count()>0)for(size_t j=0;j<boxes.size();++j)if(tr.measured&&(boxes[j].center()-tr.raw_box.center()).norm()<1e-6){for(int idx:groups[j].indices){auto& q=(*vox)[idx];pcl::PointXYZRGB v;v.x=q.x;v.y=q.y;v.z=q.z;v.b=col[0];v.g=col[1];v.r=col[2];colored.push_back(v);}break;}
     }
@@ -350,6 +371,7 @@ class AssociationNode:public rclcpp::Node {
     result.candidate_unique=candidates.size()==1;if(result.candidate_unique)result.candidate_track_id=candidates[0];
     result.verified_match=result.candidate_unique&&!result.association_ambiguous&&result.calibration_verified&&result.clock_verified;
     result.status=!im?"no_image":!a?"no_a2":!paired?"time_pair_unavailable":!a->history_ready?"a2_history_unready":!presence?"no_camera_presence":result.association_ambiguous?"ambiguous_clusters":candidates.empty()?(matched_regions.empty()?"no_confirmed_cluster":"camera_match_confirming"):!result.calibration_verified?"candidate_extrinsics_unverified":!result.clock_verified?"candidate_clock_unverified":"matched_geometry_only";
+    if(render){
     cv::rectangle(view,{0,0},{1279,100},{0,0,0},-1);
     cv::putText(view,"PRIMARY: "+result.primary_status+" | camera: "+result.status,{12,25},cv::FONT_HERSHEY_SIMPLEX,.7,{0,220,255},2);
     cv::putText(view,"PREVIEW ONLY | no ego deskew | apparent velocity | camera metrics UNUSED",{12,52},cv::FONT_HERSHEY_SIMPLEX,.55,{255,255,255},1);
@@ -363,6 +385,7 @@ class AssociationNode:public rclcpp::Node {
     cv::putText(bev,"MAP: "+map_status+" G:"+std::to_string(map_ground_removed)+" W:"+std::to_string(map_wall_removed),{10,150},cv::FONT_HERSHEY_SIMPLEX,.42,{230,230,230},1);
     cv::Mat top;cv::hconcat(view,bev,top);cv::resize(top,ui_top_,{1600,655});
     ui_result_=result;ui_last_cloud_=now().seconds();draw_dashboard(false);
+    }
     result.processing_ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count();assoc_pub_->publish(result);
     if(csv_){csv_<<std::setprecision(15)<<t<<','<<result.status<<','<<result.candidate_unique<<','<<result.verified_match<<','<<result.candidate_track_id<<','<<result.bin_left<<','<<result.bin_right<<','<<result.ground_points<<','<<result.nonground_points<<','<<result.tracks.size()<<','<<result.image_delta_s<<','<<result.a2_delta_s<<','<<result.processing_ms<<',';
       for(size_t i=0;i<result.candidate_track_ids.size();++i){if(i)csv_<<';';csv_<<result.candidate_track_ids[i];}csv_<<',';
@@ -371,7 +394,11 @@ class AssociationNode:public rclcpp::Node {
     if(track_csv_)track_csv_.flush();
   }
 
+  bool render_needed() const {
+    return get_parameter("show_window").as_bool()||recorder_||!preview_.empty()||image_pub_->get_subscription_count()>0;
+  }
   void draw_dashboard(bool stale){
+    if(!render_needed())return;
     const double time=now().seconds();ui_last_draw_=time;
     cv::Mat panel(860,1600,CV_8UC3,cv::Scalar(16,20,27));ui_top_.copyTo(panel(cv::Rect(0,0,1600,655)));
     auto text=[&](const std::string& v,int x,int y,double size,cv::Scalar c){cv::putText(panel,v,{x,y},cv::FONT_HERSHEY_SIMPLEX,size,c,1,cv::LINE_AA);};
@@ -382,14 +409,14 @@ class AssociationNode:public rclcpp::Node {
     const bool brake_ok=!stale&&brake_fresh&&brake_ui_->source=="lidar_primary"&&brake_ui_->track_id==ui_result_.primary_track_id&&brake_ui_->valid&&!brake_ui_->what_if&&time<=rclcpp::Time(brake_ui_->valid_until).seconds()&&std::isfinite(brake_ui_->request_mps2);
     cv::Scalar white(235,240,245),muted(155,165,180),red(70,70,255),cyan(240,210,80);
     for(int i=0;i<4;++i)cv::rectangle(panel,{i*400+8,665},{i*400+392,824},{30,36,46},-1);
-    text("EGO SPEED / IMU",24,694,.55,muted);
+    text("EGO SPEED / NAVIGATION",24,694,.55,muted);
     text(ego_ok?cv::format("%.2f m/s",ego_ui_->speed_mps):"-- m/s",24,737,.95,white);
-    text(ego_ok?cv::format("%.1f km/h",ego_ui_->speed_mps*3.6):"WAITING FOR VALID IMU",24,770,.5,cyan);
-    text("Integrated estimate / drift limited",24,800,.44,muted);
+    text(ego_ok?cv::format("%.1f km/h",ego_ui_->speed_mps*3.6):"WAITING FOR VALID EGO",24,770,.5,cyan);
+    text(ego_ui_?ego_ui_->source:"No ego source",24,800,.44,muted);
     text("LONGITUDINAL ACCELERATION",424,694,.5,muted);
     text(accel_ok?cv::format("%+.2f m/s^2",ego_ui_->longitudinal_acceleration_mps2):"-- m/s^2",424,737,.85,white);
-    text("Gravity removed / body forward",424,770,.46,cyan);
-    std::string ego_reason=!ego_ui_?"NO IMU TELEMETRY":!fresh(ego_ui_->header)?"IMU INPUT STALE":ego_ui_->reason;
+    text("Body forward / unavailable if unknown",424,770,.46,cyan);
+    std::string ego_reason=!ego_ui_?"NO EGO TELEMETRY":!fresh(ego_ui_->header)?"EGO INPUT STALE":ego_ui_->reason;
     text(ego_reason.substr(0,39),424,800,.40,muted);
     text(cv::format("CAMERA TARGET / %.0f-%.0fm",val("target_min_range_m"),val("target_max_range_m")),824,694,.5,muted);
     int row=0;

@@ -8,6 +8,7 @@ unset ROS_NAMESPACE ROS_DISCOVERY_SERVER FASTDDS_DEFAULT_PROFILES_FILE CYCLONEDD
 # A1_Total layout: <ws>/src/perception/sensor_fusion, merged install at <ws>/install.
 WS="$(cd "${ROOT}/../../.." && pwd)"
 source "$WS/config/ros.env"
+SOURCE_LOCALHOST="$ROS_LOCALHOST_ONLY"
 case "$A1_FUSION_TRANSPORT" in
   direct)
     if [[ "$A1_LIDAR_SOURCE_DOMAIN" != "$ROS_DOMAIN_ID" ]]; then
@@ -57,7 +58,7 @@ LIDAR_SOURCE_TOPIC="$A1_LIDAR_SOURCE_TOPIC"
 BRIDGE="$INSTALL/lib/a1_fusion_cpp/lidar_domain_bridge"
 if [[ "$A1_FUSION_TRANSPORT" == bridge && ! -x "$BRIDGE" ]]; then echo "Build lidar_domain_bridge first." >&2; exit 1; fi
 # Same subscriber contract in both modes; no driver launch and no ROS CLI daemon.
-env ROS_DOMAIN_ID="$LIDAR_SOURCE_DOMAIN" ROS_LOCALHOST_ONLY="${A1_ROS_LOCALHOST_ONLY:-0}" FASTRTPS_DEFAULT_PROFILES_FILE="$ROOT/cpp/config/fastdds_large_images.xml" \
+env ROS_DOMAIN_ID="$LIDAR_SOURCE_DOMAIN" ROS_LOCALHOST_ONLY="${A1_ROS_LOCALHOST_ONLY:-$SOURCE_LOCALHOST}" FASTRTPS_DEFAULT_PROFILES_FILE="$ROOT/cpp/config/fastdds_large_images.xml" \
   python3 "$WS/tools/topic_audit.py" --seconds 6 --lidar-topic "$LIDAR_SOURCE_TOPIC" --check-lidar >"$OUT/lidar_preflight.log" 2>&1 || {
   cat "$OUT/lidar_preflight.log" >&2
   echo "Shared LiDAR input unavailable. No sensor drivers started." >&2; exit 1;
@@ -118,7 +119,7 @@ launch shadow env A1_CPP_INSTALL="$INSTALL" bash "$ROOT/run.sh" fusion -p "lidar
 launch ui bash "$ROOT/run.sh" association -p "lidar_topic:=$LIDAR_INPUT" -p "csv_path:=$OUT/association.csv" -p show_window:=true -p "preview_path:=$OUT/latest.jpg" -p "recording_dir:=$OUT/recordings" "$@"
 echo "Shared LiDAR source: domain=$LIDAR_SOURCE_DOMAIN topic=$LIDAR_SOURCE_TOPIC (external owner)."
 echo "UI running: transport=$A1_FUSION_TRANSPORT domain=$ROS_DOMAIN_ID input=$LIDAR_INPUT camera=$CAMERA_MODE"
-echo "Ego input /gnss/imu must exist in this domain; bridge mode forwards LiDAR only."
+echo "Ego requires /a1_gnss/odom plus GNSS status in this domain; see shadow.yaml verification gates. Bridge forwards LiDAR only."
 echo "Logs, screenshot and continuous MP4: $OUT"
 echo "Ctrl+C closes only the processes started here. No CAN output."
 wait -n "${pids[@]}"

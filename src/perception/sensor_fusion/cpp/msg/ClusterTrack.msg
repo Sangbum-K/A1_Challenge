@@ -19,6 +19,8 @@ float64 range_m
 # Current state timestamp is Association.header; raw bounds are last measured bounds.
 bool measured
 bool prediction_valid
+# Large visible-shape change: identity can survive while motion settles.
+bool motion_reacquiring
 float64 observation_age_s
 float64[4] position_covariance_xy
 

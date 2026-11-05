@@ -13,10 +13,14 @@ bool in_front_half(const Eigen::Vector3d& body_point,double center_rad=0.);
 struct Footprint { double length{},width{},yaw{}; bool valid{}; };
 Footprint measured_footprint(const std::vector<Eigen::Vector3d>& points);
 struct Box { Eigen::Vector3d lo,hi; int points{}; Footprint footprint{}; Eigen::Vector3d center()const{return (lo+hi)*.5;} };
+// Fresh unique camera interval, NOT a persistent visual object ID.
+struct CameraSupport { double left{},right{},stamp{-1}; bool valid{}; };
 struct Track {
   int64_t id{}; Eigen::Vector4d state=Eigen::Vector4d::Zero();
   Eigen::Matrix4d covariance=Eigen::Matrix4d::Identity();
   Box box,raw_box; int hits{},misses{}; double last_seen{}; bool measured{}; bool vehicle_evidence{};
+  CameraSupport camera;
+  int shape_stable_updates{3}; // Reacquisition guard; not a velocity accuracy certificate.
 };
 // SORT-inspired CV Kalman + global Hungarian assignment, adapted to LiDAR BEV.
 // Velocities are apparent velocities in the rotating sensor/body frame, NOT navigation velocities.
@@ -25,7 +29,8 @@ class Tracker {
  public:
   explicit Tracker(TrackerConfig config={}):config_(config){}
   bool usable(const Track& t,double stamp)const;
-  const std::vector<Track>& update(double stamp,const std::vector<Box>& detections);
+  const std::vector<Track>& update(double stamp,const std::vector<Box>& detections,
+                                 const std::vector<CameraSupport>& camera={});
   void reset(){tracks_.clear();last_=-1;}
  private:
   TrackerConfig config_;

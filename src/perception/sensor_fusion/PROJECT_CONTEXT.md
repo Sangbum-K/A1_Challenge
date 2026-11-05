@@ -8,7 +8,9 @@ P5 구독은 mode/ego_source에 필요한 입력만 생성한다. debug ROS 출�
 카메라 동일 대상 추적·모델·P5·보정·freshness 기준은 유지한다.
 
 현재 조회에서는 실센서 토픽이 없어 2 Hz를 재현하지 못했다. 변경 후 실물 10 Hz/정확도 검증은 미완료다.
-기본 /gnss/imu 발행 경로는 없으며 localization/odom을 자동 ego fallback으로 쓰지 않는다.
+2026-11-05: 기본 ego는 /a1_gnss/odom + GSOF #49 상태로 변경했다.
+/localization/odom의 map 보정·정지 유지를 ego로 쓰지 않으며 자동 fallback하지 않는다.
+검증 플래그는 false 유지. 최신 수정·시험·레이스 SCC 미완료 항목은 통합 센서 문서를 따른다.
 실차 명령을 보내지 않는다. 네트워크 프로필과 다른 workspace는 수정하지 않는다.
 
 이전 모델/대상선택/주행 검증과 사용자 결정은

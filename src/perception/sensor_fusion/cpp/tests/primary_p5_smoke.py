@@ -15,12 +15,13 @@ def main():
  def spin(seconds):
   end=time.monotonic()+seconds
   while time.monotonic()<end:rclpy.spin_once(n,timeout_sec=.005)
- def frame(primary=42,age=0.,clock=True,matched=True,ambiguous=False):
+ def frame(primary=42,age=0.,clock=True,matched=True,ambiguous=False,reacquiring=False):
   ts=n.get_clock().now().to_msg()
   nav=NavigationSolution49();nav.header.stamp=ts;nav.heading=90.;nav.status.imu_alignment=4;nav.status.gnss=4;nav.velocity.east=10.;navpub.publish(nav);spin(.015)
   m=Association();m.header.stamp=ts;m.header.frame_id='lidar_vehicle';m.primary_track_id=primary;m.standby_track_id=43 if primary==42 else 42;m.clock_verified=clock;m.calibration_verified=True;m.primary_status="measured" if age==0 else "predicted";m.primary_camera_age_s=age;m.association_ambiguous=ambiguous
   for ident,x in [(42,20.),(43,35.)]:
    tr=ClusterTrack();tr.id=ident;tr.confirmed=True;tr.prediction_valid=True;tr.measured=age==0;tr.camera_matched=matched;tr.observation_age_s=age
+   tr.motion_reacquiring=reacquiring
    tr.center_m=[x,0.,0.];tr.size_m=[2.,1.8,1.5];tr.apparent_velocity_mps=[-2.,0.];tr.position_covariance_xy=[.1,0.,0.,.1];m.tracks.append(tr)
   begin=len(received);targetpub.publish(m);spin(.08)
   result=[v for v in received[begin:] if abs((v.header.stamp.sec-ts.sec)+(v.header.stamp.nanosec-ts.nanosec)/1e9)<1e-5]
@@ -34,6 +35,7 @@ def main():
   predicted,m=frame(age=.2);assert not predicted.valid and predicted.reason=='primary_camera_unconfirmed'
   unmatched,_=frame(matched=False);assert not unmatched.valid and unmatched.reason=='primary_camera_unconfirmed'
   ambiguous,_=frame(ambiguous=True);assert not ambiguous.valid and ambiguous.reason=='primary_camera_unconfirmed'
+  settling,_=frame(reacquiring=True);assert not settling.valid and settling.reason=='primary_motion_reacquiring'
   back,_=frame();assert back.valid and back.track_id==42 and back.raw_p5_mps2==first.raw_p5_mps2
   expired,_=frame(age=.4);assert not expired.valid
   swapped,_=frame(primary=43);assert swapped.valid and swapped.track_id==43 and swapped.gap_m==34.

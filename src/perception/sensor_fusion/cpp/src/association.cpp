@@ -203,7 +203,7 @@ int64_t select_primary(const std::vector<const Track*>& eligible,int64_t current
  for(const auto* t:eligible)if(t->measured&&(!nearest||t->box.center().head<2>().squaredNorm()<nearest->box.center().head<2>().squaredNorm()||(t->box.center().head<2>().squaredNorm()==nearest->box.center().head<2>().squaredNorm()&&t->id<nearest->id)))nearest=t;
  return nearest?nearest->id:-1;
 }
-const std::vector<Track>& Tracker::update(double stamp,const std::vector<Box>& ds){
+const std::vector<Track>& Tracker::update(double stamp,const std::vector<Box>& ds,const std::vector<CameraSupport>& camera){
   if(!std::isfinite(stamp)||stamp<=last_|| (last_>0&&stamp-last_>config_.memory_s)){reset();}
   if(!std::isfinite(stamp))return tracks_;
   const double dt=last_<0?.1:stamp-last_;last_=stamp;
@@ -212,7 +212,21 @@ const std::vector<Track>& Tracker::update(double stamp,const std::vector<Box>& d
   Eigen::Matrix<double,4,2> G;G<<dt*dt/2,0,0,dt*dt/2,dt,0,0,dt;
   Eigen::Matrix<double,2,4> H=Eigen::Matrix<double,2,4>::Zero();H(0,0)=H(1,1)=1;
   const Eigen::Matrix2d R=Eigen::Matrix2d::Identity()*.09;
+  auto support=[&](int j){
+    if(j>=int(camera.size()))return CameraSupport{};
+    auto c=camera[j];
+    if(!c.valid||!std::isfinite(c.left)||!std::isfinite(c.right)||c.right<=c.left||
+       !std::isfinite(c.stamp)||std::abs(stamp-c.stamp)>.08)return CameraSupport{};
+    return c;
+  };
+  auto shape_noise=[&](const Track& t,int j){
+    Eigen::Matrix2d noise=R;
+    const Eigen::Vector2d delta=(ds[j].hi-ds[j].lo).head<2>()-(t.raw_box.hi-t.raw_box.lo).head<2>();
+    for(int axis=0;axis<2;++axis)noise(axis,axis)+=std::min(1.,.25*delta[axis]*delta[axis]);
+    return noise;
+  };
   const int nt=tracks_.size(),nd=ds.size();Eigen::MatrixXd costs=Eigen::MatrixXd::Constant(nt,nd+nt,1.0);
+  Eigen::MatrixXd assisted=Eigen::MatrixXd::Constant(nt,nd,1e6);
   for(int i=0;i<nt;++i){auto& t=tracks_[i];t.state=F*t.state;t.covariance=F*t.covariance*F.transpose()+4*G*G.transpose();t.measured=false;
     // The predicted box and state must share the same timestamp, even without a measurement.
     const Eigen::Vector3d extent=t.box.hi-t.box.lo;
@@ -222,7 +236,24 @@ const std::vector<Track>& Tracker::update(double stamp,const std::vector<Box>& d
     for(int j=0;j<nd;++j){Eigen::Vector2d d=ds[j].center().head<2>()-t.state.head<2>();
       double mahal=d.dot(S.ldlt().solve(d));double size_error=((ds[j].hi-ds[j].lo).head<2>()-(t.box.hi-t.box.lo).head<2>()).norm();
       costs(i,j)=(mahal<=9.21&&d.norm()<=3&&size_error<=3)? .7*mahal/9.21+.3*std::min(1.0,size_error/3):1e6;
+      const auto c=support(j);
+      if(t.hits<3||stamp-t.last_seen>config_.coast_s||!c.valid||!t.camera.valid||
+         c.stamp<=t.camera.stamp||c.stamp-t.camera.stamp>.3||
+         !camera_surface_geometry(ds[j],true)||d.norm()>3)continue;
+      const double overlap=std::max(0.,std::min(c.right,t.camera.right)-std::max(c.left,t.camera.left));
+      const double span=std::max(c.right,t.camera.right)-std::min(c.left,t.camera.left);
+      if(overlap/span<.2)continue;
+      // Visible-surface displacement is uncertainty BEFORE gating, not only after assignment.
+      const Eigen::Matrix2d shape_S=H*t.covariance*H.transpose()+shape_noise(t,j);
+      const double shape_mahal=d.dot(shape_S.ldlt().solve(d));
+      if(shape_mahal<=9.21)assisted(i,j)=.7*shape_mahal/9.21+.3*std::min(1.,size_error/3);
     }
+  }
+  // Interval continuity alone cannot resolve crossing/occluded vehicles. Refuse
+  // relaxation when another live track can claim the same measurement.
+  for(int j=0;j<nd;++j){int claims=0;
+    for(int i=0;i<nt;++i)if(costs(i,j)<.95||assisted(i,j)<.95)++claims;
+    if(claims==1)for(int i=0;i<nt;++i)if(costs(i,j)>=.95&&assisted(i,j)<.95)costs(i,j)=assisted(i,j);
   }
   auto assignments=hungarian(costs);std::vector<bool> consumed(nd),blocked_birth(nd);
   // A plausible observation of a confirmed live track is not immediately a new object.
@@ -235,13 +266,15 @@ const std::vector<Track>& Tracker::update(double stamp,const std::vector<Box>& d
     if(other-costs(i,j)<.03){++t.misses;continue;}
     // Changed visible surfaces make the centroid less reliable, independently per axis.
     const Eigen::Vector2d shape_delta=(ds[j].hi-ds[j].lo).head<2>()-(t.raw_box.hi-t.raw_box.lo).head<2>();
-    Eigen::Matrix2d measurement_R=R;
-    for(int axis=0;axis<2;++axis)measurement_R(axis,axis)+=std::min(1.,.25*shape_delta[axis]*shape_delta[axis]);
+    Eigen::Matrix2d measurement_R=shape_noise(t,j);
     Eigen::Matrix2d S=H*t.covariance*H.transpose()+measurement_R;Eigen::Matrix<double,4,2> K=t.covariance*H.transpose()*S.inverse();
     t.state+=K*(ds[j].center().head<2>()-H*t.state);
     const Eigen::Matrix4d A=Eigen::Matrix4d::Identity()-K*H;
     t.covariance=A*t.covariance*A.transpose()+K*measurement_R*K.transpose();
     t.raw_box=ds[j];
+    if(shape_delta.norm()>1.)t.shape_stable_updates=0;
+    else t.shape_stable_updates=std::min(3,t.shape_stable_updates+1);
+    const auto c=support(j);if(c.valid&&c.stamp>t.camera.stamp)t.camera=c;
     t.vehicle_evidence=t.vehicle_evidence||full_vehicle_geometry(ds[j]);
     const double alpha=1-std::exp(-dt/.25);
     Eigen::Vector3d extent=(1-alpha)*(t.box.hi-t.box.lo)+alpha*(ds[j].hi-ds[j].lo);
@@ -249,6 +282,7 @@ const std::vector<Track>& Tracker::update(double stamp,const std::vector<Box>& d
     t.box={center-extent*.5,center+extent*.5,ds[j].points};t.last_seen=stamp;t.measured=true;t.misses=0;++t.hits;consumed[j]=true;
   }
   for(int j=0;j<nd;++j)if(!consumed[j]&&!blocked_birth[j]){Track t;t.id=next_++;t.box=t.raw_box=ds[j];
+    t.camera=support(j);
     t.vehicle_evidence=t.vehicle_evidence||full_vehicle_geometry(ds[j]);t.state.head<2>()=ds[j].center().head<2>();t.covariance.diagonal()<<.09,.09,25,25;t.hits=1;t.vehicle_evidence=full_vehicle_geometry(ds[j]);t.measured=true;t.last_seen=stamp;tracks_.push_back(t);}
   return tracks_;
 }

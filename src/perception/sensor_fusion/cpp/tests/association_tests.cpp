@@ -32,6 +32,31 @@ int main(){using namespace a1::inspection;
  // Recorded failure shape: rear face has little depth; camera support is required.
  Box rear{{30,-.85,-.3},{30.17,.85,.27},13};
  CHECK(!full_vehicle_geometry(rear));CHECK(camera_surface_geometry(rear));
+ // Rear -> side changes visible extent by >3 m and shifts the surface centroid.
+ Box side{{29,-.85,-.3},{33.5,.85,.27},30};
+ auto seed=[&](Tracker& tracker){
+  for(int k=0;k<6;++k){double t=1.+.1*k;tracker.update(t,{rear},{{580,700,t,true}});}
+ };
+ Tracker aided;seed(aided);auto original=aided.update(1.6,{side},{{560,720,1.6,true}});
+ CHECK(original.size()==1&&original[0].id==1&&original[0].measured);
+ CHECK(original[0].shape_stable_updates==0);
+ for(int k=0;k<3;++k){double t=1.7+.1*k;const auto& tr=aided.update(t,{side},{{560,720,t,true}});
+  CHECK(tr.size()==1&&tr[0].id==1&&tr[0].measured);
+ }
+ CHECK(aided.update(2.,{side},{{560,720,2.,true}})[0].shape_stable_updates==3);
+ for(auto c:std::vector<CameraSupport>{{}, {560,720,1.5,true}, {560,720,1.,true},
+      {900,1050,1.6,true}, {560,720,NAN,true}, {560,720,1.6,false}}){
+  Tracker guarded;seed(guarded);const auto& tr=guarded.update(1.56,{side},{c});
+  CHECK(tr[0].id==1&&!tr[0].measured); // No identity rescue from stale/replayed/other camera regions.
+ }
+ Tracker wall_guard;seed(wall_guard);Box oversized_side=side;oversized_side.hi.x()=36.;
+ CHECK(!wall_guard.update(1.6,{oversized_side},{{560,720,1.6,true}})[0].measured);
+ Tracker competing;Box second=rear;second.lo.x()+=1.;second.hi.x()+=1.;
+ for(int k=0;k<6;++k){double t=1.+.1*k;competing.update(t,{rear,second},{{580,700,t,true},{580,700,t,true}});}
+ const auto& contested=competing.update(1.6,{side},{{560,720,1.6,true}});
+ CHECK(contested[0].hits>=3&&contested[1].hits>=3);
+ CHECK(!contested[0].measured&&!contested[1].measured);
+ std::cout<<"Camera-assisted shape continuity: same ID, motion settling, stale/replayed/ambiguous/oversized rejection: PASS\n";
  Box clipped=rear;clipped.hi.z()=clipped.lo.z()+.2;
  CHECK(!camera_surface_geometry(clipped));CHECK(camera_surface_geometry(clipped,true));
  clipped.hi.z()=clipped.lo.z()+.1;CHECK(!camera_surface_geometry(clipped,true));

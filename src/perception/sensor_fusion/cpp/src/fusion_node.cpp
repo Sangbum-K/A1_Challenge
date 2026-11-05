@@ -7,6 +7,7 @@
 #include <gsof_msgs/msg/navigation_solution49.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/msg/imu.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/segmentation/sac_segmentation.h>
@@ -61,7 +62,12 @@ class FusionNode: public rclcpp::Node {
     primary_motion_verified_=declare_parameter("primary_motion_verified",false);
     if(!std::isfinite(primary_coast_s_)||primary_coast_s_<=0||!std::isfinite(primary_variance_)||primary_variance_<=0)throw std::invalid_argument("invalid primary freshness/variance");
     ego_source_=declare_parameter<std::string>("ego_source","imu");
-    if(ego_source_!="imu"&&ego_source_!="ins")throw std::invalid_argument("ego_source must be imu or ins");
+    if(ego_source_!="imu"&&ego_source_!="ins"&&ego_source_!="gnss_odom")throw std::invalid_argument("ego_source must be imu, ins or gnss_odom");
+    gnss_odom_verified_=declare_parameter("gnss_odom_verified",false);
+    gnss_odom_topic_=declare_parameter<std::string>("gnss_odom_topic","/a1_gnss/odom");
+    gnss_status_topic_=declare_parameter<std::string>("gnss_status_topic","/gsof_client/gsof/ins_solution_49");
+    gnss_status_offset_=declare_parameter("gnss_status_stamp_offset_s",0.0);
+    if(!std::isfinite(gnss_status_offset_)||!std::isfinite(ins_offset_))throw std::invalid_argument("navigation stamp offsets must be finite");
     a1::ImuConfig ic;ic.stationary_start_confirmed=declare_parameter("imu_stationary_start_confirmed",false);
     ic.mount_verified=declare_parameter("imu_mount_verified",false);
     ic.calibration_s=declare_parameter("imu_calibration_s",2.0);
@@ -75,6 +81,13 @@ class FusionNode: public rclcpp::Node {
     const auto ins_topic=declare_parameter<std::string>("ins_topic","/gsof_client/gsof/ins_solution_49");
     const auto imu_topic=declare_parameter<std::string>("imu_topic","/gnss/imu");
     const auto lidar_topic=declare_parameter<std::string>("lidar_topic","/lidar_points");
+    if(ego_source_=="gnss_odom"){
+      gnss_status_sub_=create_subscription<Ins>(gnss_status_topic_,rclcpp::SensorDataQoS(),[this](Ins::ConstSharedPtr m){
+        gnss_status_=m;
+        if(!navigation_aligned(*m))reject_ego("gnss_alignment_invalid",now().seconds());
+      });
+      gnss_odom_sub_=create_subscription<nav_msgs::msg::Odometry>(gnss_odom_topic_,rclcpp::SensorDataQoS(),[this](nav_msgs::msg::Odometry::ConstSharedPtr m){gnss_odom(*m);});
+    }
     if(ego_source_=="ins")ins_sub_=create_subscription<Ins>(ins_topic,rclcpp::SensorDataQoS(),[this](Ins::ConstSharedPtr m){ins(*m);});
     if(ego_source_=="imu")imu_sub_=create_subscription<sensor_msgs::msg::Imu>(imu_topic,rclcpp::SensorDataQoS(),[this](sensor_msgs::msg::Imu::ConstSharedPtr m){
       if(ego_source_!="imu")return;
@@ -89,7 +102,12 @@ class FusionNode: public rclcpp::Node {
     if(mode_!="association")a2_sub_=create_subscription<Features>("/lead_fusion/a2",rclcpp::SensorDataQoS().keep_last(2),[this](Features::ConstSharedPtr m){features(*m);});
     if(mode_=="fusion")lidar_sub_=create_subscription<Cloud>(lidar_topic,rclcpp::SensorDataQoS().keep_last(1),[this](Cloud::ConstSharedPtr m){cloud(*m);});
     timer_=create_wall_timer(std::chrono::milliseconds(100),[this]{
-      if(now().seconds()-last_publish_>cfg_.max_age) invalid("input_timeout",now().seconds());
+      const double current=now().seconds();
+      if(egos_.empty()||current-egos_.back().stamp>cfg_.max_age||current<egos_.back().stamp){
+        reject_ego("ego_input_timeout",current);
+        return;
+      }
+      if(current-last_publish_>cfg_.max_age) invalid("input_timeout",now().seconds());
     });
     RCLCPP_INFO(get_logger(),"C++ %s shadow P5; ego_source=%s clock=%d extrinsics=%d",mode_.c_str(),ego_source_.c_str(),cfg_.clock_valid,cfg_.calibration_valid);
   }
@@ -100,6 +118,47 @@ class FusionNode: public rclcpp::Node {
     Eigen::Isometry3d t=Eigen::Isometry3d::Identity();t.translation()=a1::Vec(v[0],v[1],v[2]);
     t.linear()=(Eigen::AngleAxisd(v[5],a1::Vec::UnitZ())*Eigen::AngleAxisd(v[4],a1::Vec::UnitY())*Eigen::AngleAxisd(v[3],a1::Vec::UnitX())).toRotationMatrix();return t;
   }
+  static bool navigation_aligned(const Ins& m){
+    return m.status.imu_alignment==4&&m.status.gnss>=1&&m.status.gnss<=6;
+  }
+  void reject_ego(const std::string& reason,double stamp){
+    egos_.clear();engine_->reset();a1::Ego bad;bad.stamp=stamp;
+    publish_ego(bad,reason);invalid(reason,stamp);
+  }
+  void gnss_odom(const nav_msgs::msg::Odometry& m){
+    const double t=rclcpp::Time(m.header.stamp).seconds(),current=now().seconds();
+    if(!gnss_odom_verified_){reject_ego("gnss_odom_unverified",t);return;}
+    if(count_publishers(gnss_odom_topic_)!=1||count_publishers(gnss_status_topic_)!=1){reject_ego("gnss_source_not_unique",t);return;}
+    if(!gnss_status_||!navigation_aligned(*gnss_status_)||
+       std::abs(t-(rclcpp::Time(gnss_status_->header.stamp).seconds()+gnss_status_offset_))>cfg_.pair_slop){
+      reject_ego("gnss_status_missing_or_stale",t);return;
+    }
+    if(t<=0||current<t||current-t>cfg_.max_age||(!egos_.empty()&&t<=egos_.back().stamp)){
+      reject_ego("gnss_odom_time_invalid",t);return;
+    }
+    const auto& q=m.pose.pose.orientation;Eigen::Quaterniond rotation(q.w,q.x,q.y,q.z);
+    const auto& v=m.twist.twist.linear;const auto& w=m.twist.twist.angular;
+    const a1::Vec body_velocity(v.x,v.y,v.z);
+    if(m.header.frame_id!="odom"||m.child_frame_id!="base_link"||!rotation.coeffs().allFinite()||
+       std::abs(rotation.norm()-1)>0.01||!body_velocity.allFinite()||!std::isfinite(w.z)||
+       !std::isfinite(m.twist.covariance[0])||m.twist.covariance[0]<0){
+      reject_ego("gnss_odom_frame_or_fields_invalid",t);return;
+    }
+    rotation.normalize();const auto matrix=rotation.toRotationMatrix();
+    // Same planar contract as primary target motion; banking needs a 6DoF model.
+    if(matrix(2,2)<std::cos(10.*M_PI/180.)){reject_ego("gnss_odom_tilt_unsupported",t);return;}
+    a1::Ego e;e.stamp=t;e.valid=true;e.source="gnss_odometry";
+    e.yaw=std::atan2(matrix(1,0),matrix(0,0));e.yaw_rate=w.z;
+    e.velocity=Eigen::AngleAxisd(e.yaw,a1::Vec::UnitZ())*body_velocity;
+    // Integrate continuous velocity, never map-corrected position or stationary hold.
+    if(!egos_.empty()){
+      const auto& previous=egos_.back();const double dt=t-previous.stamp;
+      if(dt>cfg_.max_age){egos_.clear();engine_->reset();}
+      else e.position=previous.position+.5*(previous.velocity+e.velocity)*dt;
+    }
+    egos_.push_back(e);while(egos_.size()>400)egos_.pop_front();
+    publish_ego(e,"gnss_navigation");
+  }
   void ins(const Ins& m) {
     if(ego_source_!="ins")return;
     constexpr double rad=3.14159265358979323846/180;
@@ -109,15 +168,21 @@ class FusionNode: public rclcpp::Node {
     const a1::Vec lever_world=Eigen::AngleAxisd(e.yaw,a1::Vec::UnitZ())*lever_;
     e.velocity-=a1::Vec(0,0,e.yaw_rate).cross(lever_world);
     // This baseline uses planar motion: tilted INS/roads require a full 6DoF backend.
-    e.valid=ins_verified_&&m.status.imu_alignment==4&&m.status.gnss>=1&&m.status.gnss<=6&&
+    e.valid=ins_verified_&&navigation_aligned(m)&&
       e.velocity.allFinite()&&std::isfinite(e.yaw)&&std::isfinite(e.yaw_rate)&&
       std::isfinite(m.roll)&&std::isfinite(m.pitch)&&std::abs(m.roll)<10&&std::abs(m.pitch)<10;
+    if(now().seconds()<e.stamp||now().seconds()-e.stamp>cfg_.max_age||
+       (!egos_.empty()&&e.stamp<=egos_.back().stamp)){
+      reject_ego("ins_time_invalid",e.stamp);return;
+    }
     if(!egos_.empty()) {
       const auto& prev=egos_.back();const double dt=e.stamp-prev.stamp;
       if(dt<=0||dt>.25||!e.valid||!prev.valid){egos_.clear();engine_->reset();}
       else e.position=prev.position+.5*(prev.velocity+e.velocity)*dt;
     }
     egos_.push_back(e);while(egos_.size()>400) egos_.pop_front();
+    publish_ego(e,e.valid?"ins_navigation":"ins_unverified_or_invalid");
+    if(!e.valid)invalid("ins_unverified_or_invalid",e.stamp);
   }
   a1::Ego ego_at(double t) const {
     for(auto it=egos_.rbegin();it!=egos_.rend();++it) if(it->stamp<=t) {
@@ -143,6 +208,7 @@ class FusionNode: public rclcpp::Node {
   void primary(const a1_fusion_cpp::msg::Association& m){
     const double t=rclcpp::Time(m.header.stamp).seconds();
     if(m.header.frame_id!="lidar_vehicle"){invalid("primary_frame_mismatch",t);return;}
+    if(t<=0||now().seconds()<t||now().seconds()-t>cfg_.max_age){invalid("primary_invalid_or_expired",t);return;}
     if(t<=last_primary_){invalid("primary_nonmonotonic",t);return;}last_primary_=t;
     if(!m.clock_verified||!cfg_.clock_valid){invalid("clock_unverified",t);return;}
     if(!m.calibration_verified||!cfg_.calibration_valid){invalid("extrinsics_unverified",t);return;}
@@ -152,13 +218,15 @@ class FusionNode: public rclcpp::Node {
          !std::isfinite(m.primary_camera_age_s)||m.primary_camera_age_s<0||m.primary_camera_age_s>primary_coast_s_){
         invalid("primary_camera_unconfirmed",t);return;
       }
+      if(tr.motion_reacquiring){invalid("primary_motion_reacquiring",t);return;}
       a1::PrimaryTarget target;target.id=tr.id;target.stamp=t;
       const double age=tr.observation_age_s;
       target.valid_until=t+primary_coast_s_-age;
-      target.center=a1::Vec(tr.center_m[0],tr.center_m[1],tr.center_m[2]);
-      target.gap=tr.center_m[0]-.5*tr.size_m[0]-cfg_.bumper_x;
+      // Association axes are body-aligned but its origin is the LiDAR.
+      target.center=a1::Vec(tr.center_m[0],tr.center_m[1],tr.center_m[2])+lidar_from_.translation();
+      target.gap=target.center.x()-.5*tr.size_m[0]-cfg_.bumper_x;
       // Body-coordinate derivative -> relative longitudinal velocity (planar yaw correction).
-      target.relative_speed=tr.apparent_velocity_mps[0]-e.yaw_rate*tr.center_m[1];
+      target.relative_speed=tr.apparent_velocity_mps[0]-e.yaw_rate*target.center.y();
       target.predicted=!tr.measured;
       target.valid=tr.confirmed&&tr.prediction_valid&&std::isfinite(age)&&age>=0&&age<=primary_coast_s_&&
         std::isfinite(tr.size_m[0])&&tr.size_m[0]>=0&&
@@ -236,7 +304,7 @@ class FusionNode: public rclcpp::Node {
   }
   void publish_ego(const a1::Ego& e,const std::string& reason){
     a1_fusion_cpp::msg::EgoMotion m;m.header.stamp=rclcpp::Time(int64_t(e.stamp*1e9));m.header.frame_id="base_link";
-    m.valid=e.valid;m.source="imu_integrated_experimental";m.reason=reason;
+    m.valid=e.valid;m.source=ego_source_=="imu"?"imu_integrated_experimental":ego_source_=="gnss_odom"?"gnss_odometry":"ins_navigation";m.reason=reason;
     m.speed_mps=e.valid?e.forward():a1::nan;
     m.longitudinal_acceleration_mps2=e.valid?std::cos(e.yaw)*e.acceleration.x()+std::sin(e.yaw)*e.acceleration.y():a1::nan;
     ego_pub_->publish(m);
@@ -256,6 +324,10 @@ class FusionNode: public rclcpp::Node {
   a1::Config cfg_;std::unique_ptr<a1::Engine> engine_;std::string mode_,time_field_,cloud_frame_,camera_frame_;
   std::string ego_source_,imu_frame_;std::unique_ptr<a1::ImuSpeed> imu_;
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  bool gnss_odom_verified_{};double gnss_status_offset_{};
+  std::string gnss_odom_topic_,gnss_status_topic_;Ins::ConstSharedPtr gnss_status_;
+  rclcpp::Subscription<Ins>::SharedPtr gnss_status_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr gnss_odom_sub_;
   Eigen::Isometry3d lidar_from_;a1::Vec lever_;bool ins_verified_{};double ins_yaw_{},ins_offset_{},last_cloud_{-1},last_publish_{};
   std::deque<a1::Ego> egos_;std::deque<a1::A2> a2s_;std::ofstream csv_;
   rclcpp::Subscription<Ins>::SharedPtr ins_sub_;rclcpp::Subscription<Features>::SharedPtr a2_sub_;rclcpp::Subscription<Cloud>::SharedPtr lidar_sub_;

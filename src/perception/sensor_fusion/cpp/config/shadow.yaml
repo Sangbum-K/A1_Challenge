@@ -5,7 +5,13 @@ a1_fusion:
     primary_max_position_variance_m2: 1.0
     # Apparent velocity + planar yaw correction is not yet driving-validated.
     primary_motion_verified: false
-    ego_source: imu
+    # Continuous GNSS/INS motion, independent of MOLA correction/standstill hold.
+    ego_source: gnss_odom
+    gnss_odom_topic: /a1_gnss/odom
+    gnss_status_topic: /gsof_client/gsof/ins_solution_49
+    gnss_odom_verified: false
+    # Default driver time_source=now; GPS mode needs the relay's UTC offset here.
+    gnss_status_stamp_offset_s: 0.0
     imu_topic: /gnss/imu
     imu_frame: ins
     imu_stationary_start_confirmed: false
@@ -29,8 +35,9 @@ a1_fusion:
     # xyz, roll, pitch, yaw (radians). Examples are NOT measured calibration.
     # User confirmed 2026-11-03: LiDAR -Y is vehicle forward.
     # User also confirmed +Z up: base X=-lidar Y, base Y=lidar X.
-    # Translation, roll/pitch and fine yaw remain unmeasured.
-    base_from_lidar: [0.0, 0.0, 0.0, 0.0, 0.0, 1.5707963267948966]
+    # Translation from a1_gnss_bringup/config/vehicle_extrinsics.yaml.
+    # Camera/bumper alignment and motion still require validation.
+    base_from_lidar: [1.16, 0.0, 1.20, 0.0, 0.0, 1.5707963267948966]
     # Nominal optical transform: camera 0.8 m forward, 0.3 m below LiDAR.
     # Lateral=0 assumed; camera level/forward nominal, fine angles/intrinsics unverified.
     camera_from_base: [0.0, -0.3, -0.8, 1.5707963267948966, -1.5707963267948966, 0.0]

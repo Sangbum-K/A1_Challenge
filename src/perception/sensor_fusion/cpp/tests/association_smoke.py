@@ -16,7 +16,7 @@ def main():
  front_sub=n.create_subscription(PointCloud2,'/lead_fusion/front_points',fronts.append,qos_profile_sensor_data)
  sub=n.create_subscription(Association,'/lead_fusion/association',rows.append,qos_profile_sensor_data)
  tmp=tempfile.TemporaryDirectory();csv_path=tmp.name+'/association.csv'
- proc=subprocess.Popen([args.binary,'--ros-args','-p','csv_path:='+csv_path,'-p','image_topic:=/test/image','-p','lidar_topic:=/test/cloud','-p','camera_position_m:=[0.8, 0.0, -0.3]','-p','cluster_tolerance_m:=0.45','-p','corridor_half_width_m:=12.0','-p',f'lidar_roi_center_deg:={args.roi_center_deg}'],stdout=subprocess.DEVNULL)
+ proc=subprocess.Popen([args.binary,'--ros-args','-p','csv_path:='+csv_path,'-p','image_topic:=/test/image','-p','lidar_topic:=/test/cloud','-p','sensor_height_m:=1.8','-p','camera_position_m:=[0.8, 0.0, -0.3]','-p','cluster_tolerance_m:=0.45','-p','corridor_half_width_m:=12.0','-p',f'lidar_roi_center_deg:={args.roi_center_deg}'],stdout=subprocess.DEVNULL)
  try:
   deadline=time.monotonic()+10
   while not cloud_pub.get_subscription_count() and time.monotonic()<deadline:rclpy.spin_once(n,timeout_sec=.05)
