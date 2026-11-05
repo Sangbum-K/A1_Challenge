@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "/usr/bin/python3",
+    "/opt/ros/humble/bin/ros2",
+    "launch",
+    "a1_bringup",
+    "localization.launch.py",
+    "map:=/home/ailab/git/A1_localization/maps/track_merged/map",
+    ""
+  ],
+  "ros_environment": {
+    "ROS_DOMAIN_ID": "0",
+    "ROS_LOCALHOST_ONLY": "0"
+  }
+}

@@ -1,0 +1,65 @@
+/a1_fusion:
+  ros__parameters:
+    base_from_imu:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    base_from_lidar:
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 0.0
+    - 1.5707963267948966
+    base_to_ins_m:
+    - 0.0
+    - 0.0
+    - 0.0
+    bumper_x_m: 0.0
+    camera_cx: 640.0
+    camera_frame: hikrobot_camera_vis
+    camera_from_base:
+    - 0.0
+    - -0.3
+    - -0.8
+    - 1.5707963267948966
+    - -1.5707963267948966
+    - 0.0
+    camera_fx: 640.0
+    camera_metric_validated: false
+    camera_width: 1280.0
+    clock_verified: false
+    corridor_half_width_m: 1.8
+    csv_path: ''
+    ego_source: imu
+    extrinsics_verified: false
+    imu_calibration_s: 2.0
+    imu_frame: ins
+    imu_max_integration_s: 10.0
+    imu_mount_verified: false
+    imu_stationary_start_confirmed: false
+    imu_topic: /gnss/imu
+    ins_mount_verified: false
+    ins_stamp_offset_s: 0.0
+    ins_to_vehicle_yaw_rad: 0.0
+    ins_topic: /gsof_client/gsof/ins_solution_49
+    lidar_frame: hesai_lidar
+    lidar_topic: /lidar_points
+    max_age_s: 0.25
+    mode: fusion
+    object_threshold: 0.5
+    pair_slop_s: 0.08
+    plan_speed_mps: -1.0
+    point_time_field: timestamp
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    use_sim_time: false
+

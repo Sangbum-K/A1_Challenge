@@ -1,0 +1,8 @@
+default via 172.20.10.1 dev enxfe9ca78be6f6 proto dhcp metric 100 
+default via 192.168.137.1 dev enp5s0 proto static metric 20101 
+169.254.0.0/16 dev enxfe9ca78be6f6 scope link metric 1000 
+172.20.10.0/28 dev enxfe9ca78be6f6 proto kernel scope link src 172.20.10.2 metric 100 
+192.168.1.0/24 dev enp4s0 proto kernel scope link src 192.168.1.100 metric 103 
+192.168.1.0/24 dev enp0s31f6 proto kernel scope link src 192.168.1.102 metric 500 
+192.168.1.51 dev enp0s31f6 proto static scope link metric 50 
+192.168.136.0/23 dev enp5s0 proto kernel scope link src 192.168.137.2 metric 101 

@@ -1,0 +1,26 @@
+[
+  {
+    "path": "/home/ailab/.ros/a1_localization/pandarxt_runtime.yaml",
+    "unchanged": true
+  },
+  {
+    "path": "/home/ailab/git/A1_localization/src/a1/a1_gnss_bringup/config/gsof_client.yaml",
+    "unchanged": true
+  },
+  {
+    "profile": "a1-sensor-lidar",
+    "unchanged": true
+  },
+  {
+    "profile": "a1-sensor-gnss",
+    "unchanged": true
+  },
+  {
+    "profile": "Wired connection 1",
+    "unchanged": true
+  },
+  {
+    "profile": "a1-sensor-camera",
+    "unchanged": true
+  }
+]

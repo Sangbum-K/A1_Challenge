@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>F2 룰베이스 설계</title>
+<style>
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #f0efeb;
+  --text: #1f2328;
+  --muted: #5d636b;
+  --border: #dcdad4;
+  --accent: #2458a6;
+  --accent-soft: #e6eefa;
+  --senior: #1e7a4c;
+  --senior-soft: #e3f3ea;
+  --ours: #a3570b;
+  --ours-soft: #fbeedd;
+  --warn: #a8321f;
+  --warn-soft: #fbe6e2;
+  --code-bg: #f3f2ee;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a;
+    --surface: #1d2024;
+    --surface-2: #25292e;
+    --text: #e6e6e3;
+    --muted: #a0a5ab;
+    --border: #353a40;
+    --accent: #7ea8ea;
+    --accent-soft: #1f2d42;
+    --senior: #6fcf9c;
+    --senior-soft: #183326;
+    --ours: #f0a55a;
+    --ours-soft: #3a2815;
+    --warn: #f08a78;
+    --warn-soft: #3d1f1a;
+    --code-bg: #23262b;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a;
+  --surface: #1d2024;
+  --surface-2: #25292e;
+  --text: #e6e6e3;
+  --muted: #a0a5ab;
+  --border: #353a40;
+  --accent: #7ea8ea;
+  --accent-soft: #1f2d42;
+  --senior: #6fcf9c;
+  --senior-soft: #183326;
+  --ours: #f0a55a;
+  --ours-soft: #3a2815;
+  --warn: #f08a78;
+  --warn-soft: #3d1f1a;
+  --code-bg: #23262b;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+main { max-width: 920px; margin: 0 auto; padding: 32px 16px 80px; }
+header.doc { border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 28px; }
+h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 8px; }
+.meta { color: var(--muted); font-size: 0.9rem; }
+h2 {
+  font-size: 1.3rem; margin: 48px 0 14px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+h2 .num { color: var(--accent); margin-right: 6px; }
+h3 { font-size: 1.05rem; margin: 28px 0 8px; }
+p { margin: 8px 0 12px; }
+.lead { font-size: 1.05rem; }
+code, .mono { font-family: "JetBrains Mono", "D2Coding", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
+.table-wrap { overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.93rem; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { background: var(--surface-2); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+td.sym { font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif; font-style: italic; white-space: nowrap; font-size: 1.02rem; }
+.tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.senior { background: var(--senior-soft); color: var(--senior); }
+.tag.ours { background: var(--ours-soft); color: var(--ours); }
+.tag.missing { background: var(--warn-soft); color: var(--warn); }
+.tag.todo { background: var(--accent-soft); color: var(--accent); }
+
+.summary { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin: 16px 0; }
+.summary ol { margin: 6px 0; padding-left: 22px; }
+
+.eq {
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+  border-radius: 8px; padding: 14px 18px; margin: 14px 0 6px; overflow-x: auto;
+}
+.eq .label { font-size: 0.8rem; color: var(--muted); margin-bottom: 6px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.eq .f {
+  font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+  font-size: 1.12rem; line-height: 2; white-space: nowrap;
+}
+.eq .f i { font-style: italic; }
+.eq.senior { border-left-color: var(--senior); }
+.eq.ours { border-left-color: var(--ours); }
+.vars { margin: 4px 0 18px; }
+.vars .table-wrap { margin-top: 6px; }
+
+.note { border-radius: 8px; padding: 12px 16px; margin: 14px 0; font-size: 0.95rem; }
+.note.warn { background: var(--warn-soft); }
+.note.info { background: var(--accent-soft); }
+.note strong:first-child { display: block; margin-bottom: 2px; }
+
+/* flow diagram */
+.flow { display: grid; gap: 10px; margin: 16px 0; }
+.flow .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) { .flow .row.two { grid-template-columns: 1fr 1fr; } }
+.box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.box .t { font-weight: 700; }
+.box .s { color: var(--muted); font-size: 0.88rem; }
+.box.a2 { border-top: 4px solid var(--accent); }
+.box.gate { border-top: 4px solid var(--senior); }
+.box.p5 { border-top: 4px solid var(--senior); }
+.box.mix { border-top: 4px solid var(--ours); }
+.box.f1 { border-top: 4px solid var(--muted); }
+.arrow { text-align: center; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+
+.cases td:first-child { white-space: nowrap; font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; font-size: 0.85rem; color: var(--muted); align-items: center; }
+footer { margin-top: 56px; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 16px; }
+</style>
+</head>
+<body>
+<main>
+
+<header class="doc">
+  <h1>A1 실차 F2 룰베이스 설계 (P5 기준)</h1>
+  <div class="meta">작성 2026-09-29 · 상태: 설계안 (미구현 · 미검증) · 범위: A₂ 출력 → 규칙 gate + P5 감속식 → F1 결합</div>
+</header>
+
+<p class="lead">
+선배 최종 모델 <code>scc_p5_dbspd2.pt</code>의 F2 체크포인트와 gate 체크포인트가 없으므로,
+두 학습 모델이 <b>따라 하도록 학습했던 원본 식</b>으로 각 자리를 대체한다.
+</p>
+
+<div class="legend">
+  표기: <span class="tag senior">선배 원본</span> 코드에 있는 식·값 그대로
+  <span class="tag ours">실차용 변경</span> 실차에서 데이터·단위가 달라 바꾼 부분
+  <span class="tag todo">미정</span> 결정·측정 필요
+</div>
+
+<!-- 1 -->
+<h2><span class="num">1</span>한눈에 보기</h2>
+
+<div class="summary">
+  <ol>
+    <li><b>누락:</b> F2 학습 체크포인트, gate 학습 체크포인트 (그리고 최종 모델용 A₂ 버전)</li>
+    <li><b>대체:</b> gate 자리에는 <b>선배가 배포했던 규칙 gate</b>, F2 자리에는 <b>F2 학습 라벨을 만든 P5 식</b></li>
+    <li><b>결합:</b> 선배 방식 그대로 “부족한 브레이크만 gate만큼 더하기”. 가속은 더하지 않는다.</li>
+  </ol>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>최종 모델 부품</th><th>파일</th><th>상태</th><th>우리 대체</th></tr></thead>
+  <tbody>
+    <tr><td>backbone</td><td><code>seg_pretrain_fx640_v3_backbone.pt</code></td><td><span class="tag senior">있음</span></td><td>그대로 사용</td></tr>
+    <tr><td>A₂ (21-frame)</td><td>최종: <code>a2_mf20_v2s_n20_db_spd.pt</code><br>보유: <code>a2_mf20_v2s_n20.pt</code></td><td><span class="tag missing">최종 버전 없음</span></td><td>이전 버전으로 대체 사용</td></tr>
+    <tr><td>F2 (브레이크 양)</td><td><code>scc_p5_dbspd2.pt</code> 내부</td><td><span class="tag missing">없음</span></td><td><b>P5 감속식</b> (3·4장)</td></tr>
+    <tr><td>gate (앞차 신뢰도)</td><td><code>scc_gate_mlp_beat.pt</code></td><td><span class="tag missing">없음</span></td><td><b>규칙 gate</b> (3장)</td></tr>
+    <tr><td>MORAI 페달 맵</td><td><code>pedal_map_a1_f4.csv</code></td><td><span class="tag missing">없음</span></td><td>불필요: 출력을 m/s²로 낸다</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>
+F2와 gate는 원래 <b>따로 학습된 독립 부품</b>이다. F2는 gate = 1로 학습했고, gate는 A₂ 앞차 점수만 보고 따로 학습했다.
+이 둘을 대회 규정(단일 모델 파일, 단일 신경망 그래프)에 맞춰 <code>A1E2EModel</code> 하나로 <b>포장만</b> 했다.
+그래서 부품을 하나씩 식으로 바꿔도 구조가 깨지지 않는다.
+</p>
+
+<!-- 2 -->
+<h2><span class="num">2</span>전체 흐름</h2>
+
+<div class="flow">
+  <div class="box a2"><div class="t">A₂ 출력 (40칸 × 7채널, 21 Hz)</div><div class="s">카메라 → backbone → A₂ MF20 · 식 0으로 값 꺼내기</div></div>
+  <div class="arrow">▼</div>
+  <div class="row two">
+    <div class="box gate"><div class="t">식 1 · 규칙 gate → g (0~1)</div><div class="s">최근 앞차 점수로 “앞차를 얼마나 믿나”</div></div>
+    <div class="box p5"><div class="t">식 2 · P5 감속식 → a<sub>P5</sub> (m/s²)</div><div class="s">거리·상대속도·자차속도로 “얼마나 줄여야 하나”</div></div>
+  </div>
+  <div class="arrow">▼</div>
+  <div class="row two">
+    <div class="box f1"><div class="t">F1 가감속 a<sub>F1</sub></div><div class="s">경로 추종용 기본 명령 (F1 미확정)</div></div>
+    <div class="box mix"><div class="t">식 3 · 결합 → a<sub>final</sub></div><div class="s">부족한 브레이크만 g만큼 더한다</div></div>
+  </div>
+</div>
+
+<!-- 3 -->
+<h2><span class="num">3</span>식 0 · A₂ 출력에서 값 꺼내기</h2>
+
+<p>A₂는 가로 40칸(bin) 각각에 대해 7개 채널을 낸다. 가운데 10칸(bin 16~25)이 자기 차로 앞쪽이다.</p>
+
+<div class="eq ours">
+  <div class="label"><span class="tag ours">실차용 변경</span> 선행차 bin 선택 (선배 F2는 i₂ 특징을 직접 봤기 때문에 이 단계가 없었음)</div>
+  <div class="f">
+    <i>z<sub>k</sub></i> = <i>A</i>[<i>k</i>, 0]&emsp;&emsp;
+    <i>k</i>* = argmax<sub><i>k</i> ∈ {16,…,25}</sub> <i>z<sub>k</sub></i><br>
+    <i>d</i> = 40 · <i>A</i>[<i>k</i>*, 6]&emsp;&emsp;
+    <i>v</i><sub>rel</sub> = 20 · <i>A</i>[<i>k</i>*, 3]
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>단위</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">A</td><td>A₂ 원본 출력 (40 × 7)</td><td>-</td><td>채널 0 앞차 logit, 1 종방향 절대속도, 2 횡방향 절대속도, 3 종방향 상대속도, 4 횡방향 상대속도, 5 근접도, 6 거리</td></tr>
+    <tr><td class="sym">k</td><td>가로 bin 번호 0~39</td><td>-</td><td>16~25 = 자기 차로 (선배 gate와 같은 범위)</td></tr>
+    <tr><td class="sym">z<sub>k</sub></td><td>bin <i>k</i>의 앞차 logit (확률 아님)</td><td>-</td><td>확률은 σ(<i>z<sub>k</sub></i>)</td></tr>
+    <tr><td class="sym">k*</td><td>앞차 점수가 가장 큰 가운데 bin</td><td>-</td><td>이 bin에서 거리·속도를 읽음</td></tr>
+    <tr><td class="sym">d</td><td>앞차까지 평면 거리</td><td>m</td><td>채널 6 × 40 (선배 <code>scale_dist=40</code>)</td></tr>
+    <tr><td class="sym">v<sub>rel</sub></td><td>종방향 상대속도 = 앞차속도 − 자차속도</td><td>m/s</td><td>채널 3 × 20 (선배 <code>scale_v=20</code>). <b>음수 = 가까워짐</b></td></tr>
+  </tbody>
+</table></div></div>
+
+<div class="eq ours">
+  <div class="label"><span class="tag ours">실차용 변경</span> <span class="tag todo">검증 전 선택 사항</span> 상대속도 교차 확인</div>
+  <div class="f">
+    <i>v</i><sub>rel,used</sub> = min( <i>v</i><sub>rel</sub> ,&nbsp; <i>ḋ</i> )
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>단위</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">ḋ</td><td>필터링한 거리 <i>d</i>의 시간 변화율</td><td>m/s</td><td>검증된 거리 채널만으로 계산한 접근속도</td></tr>
+    <tr><td class="sym">min</td><td>둘 중 더 빨리 가까워지는 값</td><td>-</td><td>속도가 틀려도 브레이크를 <b>덜</b> 거는 쪽으로는 틀리지 않게 함. 실차 검증 통과 후 <i>v</i><sub>rel</sub>만 사용</td></tr>
+  </tbody>
+</table></div></div>
+
+<!-- 4 -->
+<h2><span class="num">4</span>식 1 · 규칙 gate</h2>
+
+<p>선배가 학습 gate 이전에 실제로 배포했던 규칙이다. 학습 gate는 이 규칙을 따라 하거나(distill) 개선하도록(beat) 학습됐다.</p>
+
+<div class="eq senior">
+  <div class="label"><span class="tag senior">선배 원본</span> 매 A₂ 프레임 <i>t</i>마다</div>
+  <div class="f">
+    <i>s<sub>t</sub></i> = max<sub><i>k</i> ∈ {16,…,25}</sub> <i>A<sub>t</sub></i>[<i>k</i>, 0]<br>
+    <i>g</i><sub>raw,<i>t</i></sub> = σ( (<i>s<sub>t</sub></i> − θ) · κ ),&emsp; σ(<i>x</i>) = 1 / (1 + e<sup>−<i>x</i></sup>)<br>
+    <i>g<sub>t</sub></i> = β · <i>g</i><sub><i>t</i>−1</sub> + (1 − β) · <i>g</i><sub>raw,<i>t</i></sub>
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">s<sub>t</sub></td><td>프레임 <i>t</i>의 앞차 점수: 가운데 10칸 앞차 logit 최댓값</td><td>-</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">θ</td><td>문턱. <i>s</i> = θ이면 <i>g</i><sub>raw</sub> = 0.5 (logit 0.3 ≈ 확률 0.57)</td><td>0.3</td><td><span class="tag senior">선배 원본</span> <code>GATE_THRESH</code></td></tr>
+    <tr><td class="sym">κ</td><td>기울기. 클수록 문턱 주변에서 0↔1로 빨리 바뀜</td><td>5.0</td><td><span class="tag senior">선배 원본</span> <code>GATE_SCALE</code></td></tr>
+    <tr><td class="sym">g<sub>raw,t</sub></td><td>평활 전 순간 gate (0~1)</td><td>-</td><td></td></tr>
+    <tr><td class="sym">β</td><td>평활 계수. 이전 값을 얼마나 유지할지 (21 Hz에서 시정수 약 0.13 s)</td><td>0.7</td><td><span class="tag senior">선배 원본</span> <code>GATE_EMA</code></td></tr>
+    <tr><td class="sym">g<sub>t</sub></td><td>최종 gate: 앞차를 얼마나 믿고 브레이크를 적용할지</td><td>0~1</td><td></td></tr>
+    <tr><td class="sym">g<sub>0</sub></td><td>시작값</td><td>0</td><td><span class="tag ours">실차용 변경</span> 시작 시 브레이크 개입 없음</td></tr>
+  </tbody>
+</table></div></div>
+
+<div class="note warn">
+  <strong>주의</strong>
+  θ, κ, β는 <b>시뮬 A₂ 점수</b>를 기준으로 맞춘 값이다. 실차 A₂는 점수 분포가 다르다(9/27 60 cm 앞차 프레임 확률 중앙값 약 0.63).
+  처음에는 선배 값 그대로 쓰고, 9/27 로그로 재생해 gate가 너무 자주 꺼지거나 켜지지 않는지 본 뒤 조정한다.
+</div>
+
+<!-- 5 -->
+<h2><span class="num">5</span>식 2 · P5 감속식</h2>
+
+<p>F2가 학습한 정답 라벨(<code>gen_profile_pedal_labels_recalc.py</code>, p5 프로파일)을 만든 식이다. 앞으로 4초 동안의 속도 계획을 세운 뒤, 그 계획에서 감속량을 읽는다.</p>
+
+<h3>2-1 · 최소거리 (속도에 따라 늘어남)</h3>
+<div class="eq senior">
+  <div class="label"><span class="tag senior">선배 원본</span></div>
+  <div class="f"><i>s</i><sub>min,eff</sub> = <i>s</i><sub>min</sub> + α · ln( 1 + <i>v</i><sub>ego</sub> / <i>v</i><sub>0</sub> )</div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">v<sub>ego</sub></td><td>현재 자차 속도</td><td>m/s</td><td>차량 CAN 휠속</td></tr>
+    <tr><td class="sym">s<sub>min</sub></td><td>기본 최소거리 (정지 시 남길 거리)</td><td>7.0 m</td><td><span class="tag senior">선배 원본</span> p5</td></tr>
+    <tr><td class="sym">α</td><td>속도 로그항 크기</td><td>6.0 m</td><td><span class="tag senior">선배 원본</span> <code>SCC_LOG_ALPHA</code></td></tr>
+    <tr><td class="sym">v<sub>0</sub></td><td>속도 로그항 기준속도</td><td>5.0 m/s</td><td><span class="tag senior">선배 원본</span> <code>SCC_LOG_V0</code></td></tr>
+    <tr><td class="sym">s<sub>min,eff</sub></td><td>실제 적용 최소거리. 예: 0 m/s → 7.0 m, 10 m/s → 13.6 m, 15 m/s → 15.3 m</td><td>m</td><td></td></tr>
+  </tbody>
+</table></div></div>
+
+<h3>2-2 · 시간 격자와 자차 위치</h3>
+<div class="eq ours">
+  <div class="label"><span class="tag ours">실차용 변경</span> 선배는 레이스라인 waypoint의 누적거리를 사용</div>
+  <div class="f">
+    <i>t<sub>i</sub></i> = <i>i</i> · Δ<i>t</i>,&emsp; <i>i</i> = 0, 1, …, <i>N</i> − 1<br>
+    <i>x</i><sub>0</sub> = 0,&emsp; <i>x<sub>i</sub></i> = <i>x</i><sub><i>i</i>−1</sub> + <i>v</i><sub>ref,<i>i</i>−1</sub> · Δ<i>t</i>
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">Δt</td><td>계획 시간 간격</td><td>0.1 s</td><td><span class="tag senior">선배 원본</span> 라벨 격자</td></tr>
+    <tr><td class="sym">N</td><td>계획 칸 수 (총 4초)</td><td>40</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">t<sub>i</sub></td><td><i>i</i>번째 칸의 미래 시각</td><td>s</td><td></td></tr>
+    <tr><td class="sym">v<sub>ref,i</sub></td><td>원래 목표속도 계획 (앞차가 없을 때 달리려던 속도)</td><td>m/s</td><td><span class="tag todo">미정</span> F1 목표속도 계획. 없으면 <i>v</i><sub>ref,<i>i</i></sub> = <i>v</i><sub>ego</sub></td></tr>
+    <tr><td class="sym">x<sub>i</sub></td><td>원래 계획대로 갔을 때 <i>t<sub>i</sub></i>의 자차 위치 (경로 따라 누적거리)</td><td>m</td><td></td></tr>
+  </tbody>
+</table></div></div>
+
+<h3>2-3 · 앞차의 미래 위치</h3>
+<div class="eq ours">
+  <div class="label"><span class="tag ours">실차용 변경</span> 선배는 시뮬레이터 앞차 미래 궤적(OBJECT_INFO)을 사용 · 실차는 등속 가정</div>
+  <div class="f">
+    <i>v</i><sub>lead</sub> = max( 0,&nbsp; <i>v</i><sub>ego</sub> + <i>v</i><sub>rel,used</sub> )<br>
+    <i>L<sub>i</sub></i> = <i>d</i> + <i>v</i><sub>lead</sub> · <i>t<sub>i</sub></i>
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>단위</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">v<sub>lead</sub></td><td>앞차 절대속도 추정 (음수면 0)</td><td>m/s</td><td>식 0의 <i>v</i><sub>rel,used</sub> 사용</td></tr>
+    <tr><td class="sym">L<sub>i</sub></td><td><i>t<sub>i</sub></i>에서 앞차 위치 (자차 현재 위치 기준)</td><td>m</td><td>앞차가 지금 속도를 유지한다고 가정</td></tr>
+  </tbody>
+</table></div></div>
+
+<h3>2-4 · 각 시점의 안전속도 (핵심식)</h3>
+<div class="eq senior">
+  <div class="label"><span class="tag senior">선배 원본</span> C++ SCC replanner와 Python 라벨 생성기에 같은 식</div>
+  <div class="f">
+    gap<sub><i>i</i></sub> = <i>L<sub>i</sub></i> − <i>x<sub>i</sub></i><br>
+    <i>v</i><sub>safe,<i>i</i></sub> = max( 0,&nbsp; (gap<sub><i>i</i></sub> − <i>s</i><sub>min,eff</sub>) / <i>T<sub>h</sub></i> )<br>
+    <i>u<sub>i</sub></i> = min( <i>v</i><sub>ref,<i>i</i></sub>,&nbsp; <i>v</i><sub>safe,<i>i</i></sub> )
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">gap<sub>i</sub></td><td><i>t<sub>i</sub></i>에서 예상 차간거리</td><td>m</td><td></td></tr>
+    <tr><td class="sym">T<sub>h</sub></td><td>차간 시간 (time headway). 원하는 거리 = <i>s</i><sub>min,eff</sub> + <i>T<sub>h</sub></i>·<i>v</i>를 <i>v</i>에 대해 푼 것</td><td>2.0 s</td><td><span class="tag senior">선배 원본</span> p5</td></tr>
+    <tr><td class="sym">v<sub>safe,i</sub></td><td>그 거리에서 허용되는 최대 속도</td><td>m/s</td><td></td></tr>
+    <tr><td class="sym">u<sub>i</sub></td><td>속도 계획 (원래 목표속도와 안전속도 중 작은 값)</td><td>m/s</td><td>다음 단계에서 보정</td></tr>
+  </tbody>
+</table></div></div>
+
+<h3>2-5 · 미리 감속 보정 (뒤에서 앞으로)</h3>
+<div class="eq senior">
+  <div class="label"><span class="tag senior">선배 원본</span> backward pass · <i>i</i> = <i>N</i>−2, …, 0</div>
+  <div class="f"><i>u<sub>i</sub></i> ← min( <i>u<sub>i</sub></i>,&nbsp; <i>u</i><sub><i>i</i>+1</sub> + <i>D</i><sub>max</sub> · Δ<i>t</i> )</div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">D<sub>max</sub></td><td>계획상 허용 최대 감속 크기. 나중 시점에 느려져야 하면 그 전부터 줄이도록 함</td><td>20 m/s²</td><td><span class="tag senior">선배 원본</span> <code>MAX_DECEL</code></td></tr>
+  </tbody>
+</table></div></div>
+
+<h3>2-6 · 현재 속도에서 출발 (앞에서 뒤로)</h3>
+<div class="eq senior">
+  <div class="label"><span class="tag senior">선배 원본</span> forward pass · <i>i</i> = 1, …, <i>N</i>−1</div>
+  <div class="f">
+    <i>u</i><sub>0</sub> = <i>v</i><sub>ego</sub><br>
+    <i>u<sub>i</sub></i> ← clip( <i>u<sub>i</sub></i>,&nbsp; <i>u</i><sub><i>i</i>−1</sub> − <i>D</i><sub>max</sub>·Δ<i>t</i>,&nbsp; <i>u</i><sub><i>i</i>−1</sub> + <i>A</i><sub>max</sub>·Δ<i>t</i> ),&emsp; <i>u<sub>i</sub></i> ← max(<i>u<sub>i</sub></i>, 0)
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">A<sub>max</sub></td><td>계획상 허용 최대 가속</td><td>5 m/s²</td><td><span class="tag senior">선배 원본</span> <code>A_MAX</code></td></tr>
+    <tr><td class="sym">clip(x, lo, hi)</td><td><i>x</i>를 [lo, hi] 범위로 자름</td><td>-</td><td></td></tr>
+  </tbody>
+</table></div></div>
+
+<h3>2-7 · 감속량 꺼내기</h3>
+<div class="eq ours">
+  <div class="label"><span class="tag ours">실차용 변경</span> 처음 1초 평균 감속</div>
+  <div class="f">
+    <i>H</i> = round( <i>t<sub>H</sub></i> / Δ<i>t</i> ) = 10<br>
+    <i>a</i><sub>P5</sub> = ( <i>u<sub>H</sub></i> − <i>u</i><sub>0</sub> ) / <i>t<sub>H</sub></i>
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>값</th><th>출처</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">t<sub>H</sub></td><td>감속량을 읽는 구간 길이</td><td>1.0 s</td><td><span class="tag ours">실차용 변경</span> FSDS <code>p5_expert.py</code>의 <code>horizon</code> 방식</td></tr>
+    <tr><td class="sym">a<sub>P5</sub></td><td>P5가 요구하는 가감속 (음수 = 감속)</td><td>m/s²</td><td>F1 결합(식 3)에서 음수 쪽만 사용</td></tr>
+  </tbody>
+</table></div></div>
+
+<div class="note info">
+  <strong>왜 첫 칸이 아니라 1초 평균인가</strong>
+  선배 라벨은 첫 칸 감속 (<i>u</i><sub>1</sub> − <i>u</i><sub>0</sub>) / Δ<i>t</i>를 MORAI 페달 맵으로 바꿨다.
+  이 값은 개입 순간 거의 항상 −<i>D</i><sub>max</sub> = −20 m/s²에 걸려 0 아니면 풀브레이크처럼 동작한다.
+  1초 평균은 <b>같은 선배 속도 계획</b>에서 읽되 이 튐을 피한다.
+</div>
+
+<!-- 6 -->
+<h2><span class="num">6</span>식 3 · F1과 결합</h2>
+
+<div class="eq senior">
+  <div class="label"><span class="tag senior">선배 원본</span> 최종 모델 (페달 단위)</div>
+  <div class="f"><i>p</i><sub>final</sub> = clamp( <i>p</i><sub>F1</sub> + <i>g</i> · Δ,&nbsp; −1,&nbsp; 1 )</div>
+</div>
+
+<div class="eq ours">
+  <div class="label"><span class="tag ours">실차용 변경</span> 우리 (가감속 m/s² 단위)</div>
+  <div class="f">
+    δ = min( 0,&nbsp; <i>a</i><sub>P5</sub> − <i>a</i><sub>F1</sub> )<br>
+    <i>a</i><sub>final</sub> = <i>a</i><sub>F1</sub> + <i>g</i> · δ
+  </div>
+</div>
+<div class="vars"><div class="table-wrap"><table>
+  <thead><tr><th>기호</th><th>의미</th><th>단위</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">p<sub>F1</sub>, p<sub>final</sub></td><td>선배: F1 페달, 최종 페달 (+ 가속 / − 브레이크)</td><td>−1~1</td><td>MORAI 차량 기준</td></tr>
+    <tr><td class="sym">Δ</td><td>선배: 학습된 F2 페달 보정값 (브레이크 쪽)</td><td>페달</td><td><span class="tag missing">체크포인트 없음</span></td></tr>
+    <tr><td class="sym">a<sub>F1</sub></td><td>F1이 내는 기본 가감속</td><td>m/s²</td><td><span class="tag todo">미정</span> F1 확정 후 연결</td></tr>
+    <tr><td class="sym">δ</td><td><b>부족한 브레이크</b>: P5가 F1보다 더 감속을 원할 때만 음수, 아니면 0</td><td>m/s²</td><td>F1이 이미 충분히 감속 중이면 0 → 이중 브레이크 없음</td></tr>
+    <tr><td class="sym">g</td><td>식 1의 gate</td><td>0~1</td><td></td></tr>
+    <tr><td class="sym">a<sub>final</sub></td><td>최종 가감속 명령</td><td>m/s²</td><td>차량 명령 범위 ACC_Cmd −3 ~ +1 m/s² (실차 DBC)</td></tr>
+  </tbody>
+</table></div></div>
+
+<div class="table-wrap">
+<table class="cases">
+  <thead><tr><th>상황</th><th>결과</th></tr></thead>
+  <tbody>
+    <tr><td>g = 1 (앞차 확실)</td><td><i>a</i><sub>final</sub> = min(<i>a</i><sub>F1</sub>, <i>a</i><sub>P5</sub>) → 둘 중 더 센 감속</td></tr>
+    <tr><td>g = 0 (앞차 없음·불확실)</td><td><i>a</i><sub>final</sub> = <i>a</i><sub>F1</sub> → F1 그대로</td></tr>
+    <tr><td>F1이 이미 더 세게 감속</td><td>δ = 0 → F1 그대로</td></tr>
+    <tr><td>P5가 가속 여유를 줌 (<i>a</i><sub>P5</sub> &gt; <i>a</i><sub>F1</sub>)</td><td>δ = 0 → <b>F2는 가속을 더하지 않음</b></td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>선배 라벨도 같은 원리로 만들었다. <code>gen_profile_pedal_labels_obj.py</code>의 목표값은 <code>min(F1 페달, SCC 페달)</code>, 즉 “더 브레이크 쪽”이다.</p>
+
+<!-- 7 -->
+<h2><span class="num">7</span>파라미터 전체 요약</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>기호</th><th>이름</th><th>값</th><th>구분</th></tr></thead>
+  <tbody>
+    <tr><td class="sym">θ</td><td>gate 문턱</td><td>0.3 (logit)</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">κ</td><td>gate 기울기</td><td>5.0</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">β</td><td>gate 평활</td><td>0.7</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">T<sub>h</sub></td><td>차간 시간</td><td>2.0 s</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">s<sub>min</sub></td><td>기본 최소거리</td><td>7.0 m</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">α, v<sub>0</sub></td><td>최소거리 로그항</td><td>6.0 m, 5.0 m/s</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">Δt, N</td><td>계획 격자</td><td>0.1 s × 40 = 4 s</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">D<sub>max</sub>, A<sub>max</sub></td><td>계획 감속·가속 한계</td><td>20, 5 m/s²</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td>bin 범위</td><td>자기 차로</td><td>16~25</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td>채널 스케일</td><td>거리 / 속도</td><td>×40 / ×20</td><td><span class="tag senior">선배 원본</span></td></tr>
+    <tr><td class="sym">t<sub>H</sub></td><td>감속량 읽기 구간</td><td>1.0 s</td><td><span class="tag ours">실차용 변경</span></td></tr>
+    <tr><td class="sym">g<sub>0</sub></td><td>gate 시작값</td><td>0</td><td><span class="tag ours">실차용 변경</span></td></tr>
+    <tr><td class="sym">v<sub>ref,i</sub></td><td>원래 목표속도 계획</td><td>F1 계획 또는 <i>v</i><sub>ego</sub></td><td><span class="tag todo">미정</span></td></tr>
+    <tr><td>명령 범위</td><td>실차 ACC_Cmd</td><td>−3 ~ +1 m/s²</td><td>실차 DBC</td></tr>
+    <tr><td>변화율 제한</td><td>감속이 갑자기 세지거나 풀리지 않게</td><td>-</td><td><span class="tag todo">미정</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 8 -->
+<h2><span class="num">8</span>선배 원본과 달라지는 곳</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>부분</th><th>선배 원본</th><th>우리</th><th>이유</th></tr></thead>
+  <tbody>
+    <tr><td>gate</td><td>학습 TemporalMLP (16프레임)</td><td>그 이전 배포 규칙 (θ, κ, β)</td><td>체크포인트 없음</td></tr>
+    <tr><td>F2</td><td>학습 신경망 (i₂ + 자차 상태 + F1 페달)</td><td>P5 라벨 식 직접 계산</td><td>체크포인트 없음</td></tr>
+    <tr><td>앞차 미래 위치</td><td>시뮬레이터 앞차 궤적</td><td><i>d</i> + <i>v</i><sub>lead</sub>·<i>t</i> (등속 가정)</td><td>실차엔 정답 궤적 없음</td></tr>
+    <tr><td>감속량</td><td>첫 칸 감속 → MORAI 페달</td><td>1초 평균 m/s²</td><td>페달 맵 없음 · −20 튐 회피</td></tr>
+    <tr><td>결합 단위</td><td>페달 (−1~1)</td><td>가감속 (m/s²)</td><td>실차 명령이 m/s²</td></tr>
+    <tr><td>A₂</td><td><code>…_db_spd.pt</code></td><td><code>a2_mf20_v2s_n20.pt</code></td><td>최종 버전 없음</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- 9 -->
+<h2><span class="num">9</span>주의 · 미검증 항목</h2>
+<div class="note warn">
+  <strong>상대속도 <i>v</i><sub>rel</sub></strong>
+  9/27 60 cm 로그의 앞차 프레임에서 종방향 상대속도 중앙값이 +12.3, +4.9 m/s였다(90 cm 정지 차량 +10.2 m/s).
+  양수 편향은 “앞차가 멀어진다”로 읽혀 <b>브레이크가 덜 걸리는 방향</b>이다.
+  앞차 정지 + 자차 접근 실험(실제 접근속도 = CAN 속도)으로 검증하기 전까지 식 0의 교차 확인을 쓴다.
+</div>
+<ul>
+  <li>설계안이며 아직 구현·실행하지 않았다.</li>
+  <li>A₂가 최종 모델 버전이 아니다. 파일을 찾으면 교체한다.</li>
+  <li>gate 상수는 시뮬 A₂ 기준이다. 9/27 로그로 먼저 확인한다.</li>
+  <li><i>t<sub>H</sub></i> = 1 s 읽기, <i>g</i><sub>0</sub> = 0, 교차 확인은 선배 코드에 없는 우리 선택이다.</li>
+  <li>F1 목표속도 계획(<i>v</i><sub>ref</sub>)과 <i>a</i><sub>F1</sub>은 F1 확정 후 연결한다.</li>
+  <li>처리량(21 FPS), 인지 정확도, 제어 결과는 각각 따로 판정한다.</li>
+</ul>
+
+<!-- 10 -->
+<h2><span class="num">10</span>규정 관점: 선배 방식과 우리 방식</h2>
+
+<h3>선배 방식: 문제없었음</h3>
+<div class="flow">
+  <div class="box gate">
+    <div class="t mono">backbone(신경망) → A₂(신경망) → F1(신경망) → F2(신경망) → gate(신경망)</div>
+  </div>
+</div>
+<ul>
+  <li>각각 따로 학습했지만 <b>전부 신경망</b>이다.</li>
+  <li>그래서 하나의 그래프로 이어 붙이면 <b>“하나의 신경망”</b>이 된다.</li>
+  <li>규정(선배 해석)은 따로 학습하는 것을 금지하지 않았다. 실행할 때 전체가 신경망 하나로 이어져 있기만 하면 됐다.</li>
+</ul>
+
+<h3>우리 방식: 걸릴 수 있음</h3>
+<div class="flow">
+  <div class="box mix">
+    <div class="t mono">backbone(신경망) → A₂(신경망) → gate(손으로 짠 식) → F2(손으로 짠 식)</div>
+  </div>
+</div>
+
+<!-- 11 -->
+<h2><span class="num">11</span>진행 순서</h2>
+<ol>
+  <li>FSDS <code>p5_expert.py</code>를 가져와 식 2 구성 + 선배 코드와 수치 일치 테스트</li>
+  <li>식 0·1 구현 → 9/27 로그로 재생 (gate 깜빡임, 유령 브레이크, <i>a</i><sub>P5</sub> 시계열 확인)</li>
+  <li>실차 앞차 정지 + 저속 접근으로 거리·상대속도 검증</li>
+  <li>실차에서 계산만 하고 기록 (차량 미적용)</li>
+  <li>F1 확정 후 식 3 연결 → 저속·약한 감속부터 실제 적용</li>
+  <li>체크포인트를 찾으면 해당 부품 교체 후 식과 비교</li>
+</ol>
+
+<!-- 12 -->
+<h2><span class="num">12</span>출처 파일</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>내용</th><th>파일 · 위치</th></tr></thead>
+  <tbody>
+    <tr><td>규칙 gate (θ, κ, β)</td><td><code>scc_controller_imitator-main/docs/MODEL_AUDIT_2026-05-26.md</code> L34–38<br><code>scc_controller_imitator-main/scripts/learned_temporal_gate.py</code> L8–11</td></tr>
+    <tr><td>학습 gate · 통합 모델 구조</td><td><code>scc_controller_imitator-main/src/model/a1_e2e_model.py</code> (L42 gate, L218 결합식)</td></tr>
+    <tr><td>P5 파라미터 · 라벨 식</td><td><code>scc_controller_imitator-main/scripts/gen_profile_pedal_labels_recalc.py</code> L54–58, L108–131</td></tr>
+    <tr><td>안전속도 원본 (C++)</td><td><code>scc_controller_imitator-main/cpp/scc_replanner/src/scc_speed_replanner.cpp</code> L150 (앞차 궤적 L92–145)</td></tr>
+    <tr><td>P5 재구현 · 선배 대조 테스트</td><td><code>A1_FSDS_F2_Validation/src/fsds_f2_validation/p5_expert.py</code><br><code>A1_FSDS_F2_Validation/tests/test_p5_matches_senior.py</code></td></tr>
+    <tr><td>min(F1, SCC) 라벨 결합</td><td><code>scc_controller_imitator-main/scripts/gen_profile_pedal_labels_obj.py</code></td></tr>
+    <tr><td>페달 → 브레이크 분리 (선배 배포)</td><td><code>scc_controller_imitator-main/scripts/closed_loop_node.py</code> L838–839</td></tr>
+    <tr><td>A₂ 채널 디코딩 (×20, ×40)</td><td><code>A1_RealCamera_A2_21FPS/scripts/live_camera_a2_21fps.py</code> L554–563</td></tr>
+    <tr><td>최종 모델 A₂ 버전</td><td><code>scc_controller_imitator-main/docs/DATA_REGENERATION.md</code> L180</td></tr>
+    <tr><td>실차 명령 범위</td><td><code>/home/ailab/git/A1-BSW/DBC/EAIT_CAN(AVANTE_CN7).dbc</code> <code>ACC_Cmd</code> (0x157)</td></tr>
+    <tr><td>9/27 60 cm 로그</td><td><code>A1_RealCamera_A2_21FPS/outputs/field_20260927_h60_exp3000_tuning_live</code>, <code>…_h60_exp3500_tuning_live</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<footer>A1 Challenge · F2 룰베이스 설계안 · 2026-09-29</footer>
+</main>
+</body>
+</html>

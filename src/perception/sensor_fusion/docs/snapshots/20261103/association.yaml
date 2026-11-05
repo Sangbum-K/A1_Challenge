@@ -1,0 +1,39 @@
+a1_association:
+  ros__parameters:
+    # User confirmed -LiDAR Y forward and +Z up on 2026-11-03.
+    lidar_yaw_rad: 1.5707963267948966
+    # Camera position relative to LiDAR origin, in forward/left/up axes.
+    # User: camera 0.80 m forward, 0.30 m below LiDAR. Lateral offset assumed 0.
+    camera_position_m: [0.8, 0.0, -0.3]
+    camera_rpy_rad: [0.0, 0.0, 0.0]
+    # Initial preview values, NOT measured camera calibration.
+    camera_fx: 640.0
+    camera_fy: 640.0
+    camera_cx: 640.0
+    camera_cy: 360.0
+    sensor_height_m: 1.8
+    calibration_verified: false
+    clock_verified: false
+    lidar_time_offset_s: 0.0
+    pair_slop_s: 0.08
+    # Temporal EMA 0.15 s; enter/hold hysteresis, lower edge threshold.
+    presence_threshold: 0.5
+    presence_hold_threshold: 0.35
+    presence_edge_threshold: 0.25
+    fragment_merge_gap_m: 0.45
+    horizontal_iou_threshold: 0.15
+    # Inspect all visible objects first; this is NOT the final driving lead selector.
+    bin_search_min: 0
+    bin_search_max: 39
+    corridor_half_width_m: 12.0
+    # Fine first-pass clusters; bounded vehicle fragment merging follows.
+    cluster_tolerance_m: 0.45
+    voxel_size_m: 0.16
+    cluster_min_points: 5
+    min_height_above_ground_m: 0.15
+    show_debug_clusters: false
+    bev_forward_range_m: 70.0
+    # User reconfirmed original -LiDAR Y forward; no ROI heading offset.
+    # Crop heading only; not a measured camera extrinsic yaw correction.
+    lidar_roi_center_deg: 0.0
+    show_window: false

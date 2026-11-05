@@ -1,0 +1,13 @@
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+enp4s0           UP             192.168.1.100/24 
+enp6s0           DOWN           
+enp5s0           UP             192.168.137.2/23 fe80::ed4b:afe3:9a23:65bd/64 
+enp0s31f6        UP             192.168.1.102/24 
+enp2s0f0         DOWN           
+enp2s0f1         DOWN           
+can0             DOWN           
+can1             DOWN           
+wwan0            DOWN           
+enxfe9ca78be6f6  UP             172.20.10.2/28 2001:2d8:f194:d11:3916:a970:3994:1007/64 2001:2d8:f194:d11:36de:5b34:46fc:a508/64 fe80::31b5:952e:cf44:735b/64 
+vcan0            UNKNOWN        
+wlx289401c9e403  DOWN           

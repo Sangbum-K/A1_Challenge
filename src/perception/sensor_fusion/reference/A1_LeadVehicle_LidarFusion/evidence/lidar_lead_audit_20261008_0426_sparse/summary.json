@@ -1,0 +1,222 @@
+{
+  "scans": 6539,
+  "examined_start_video_s": 266.10614639700003,
+  "examined_end_video_s": 920.178636791,
+  "last_measurement_video_s": 359.138930816,
+  "first_lost_video_s": 361.140712714,
+  "retained_until_last_measurement_s": 93.032784419,
+  "measured_scans": 858,
+  "scans_through_last_measurement": 931,
+  "measured_fraction_through_last": 0.9215896885069818,
+  "max_recovered_gap_s": 1.0010551510000028,
+  "recovered_gaps": [
+    {
+      "start_s": 284.904862229,
+      "end_s": 285.106825322,
+      "duration_s": 0.20196309300001758
+    },
+    {
+      "start_s": 285.305994295,
+      "end_s": 285.505401598,
+      "duration_s": 0.19940730299998677
+    },
+    {
+      "start_s": 285.90632990800003,
+      "end_s": 286.308542196,
+      "duration_s": 0.402212287999987
+    },
+    {
+      "start_s": 286.407316229,
+      "end_s": 287.006590764,
+      "duration_s": 0.5992745350000064
+    },
+    {
+      "start_s": 287.40588285800004,
+      "end_s": 288.40693800900004,
+      "duration_s": 1.0010551510000028
+    },
+    {
+      "start_s": 288.506317489,
+      "end_s": 288.90809057,
+      "duration_s": 0.40177308099998754
+    },
+    {
+      "start_s": 289.106695219,
+      "end_s": 289.315918204,
+      "duration_s": 0.2092229849999967
+    },
+    {
+      "start_s": 289.807484134,
+      "end_s": 290.01140860600003,
+      "duration_s": 0.2039244720000397
+    },
+    {
+      "start_s": 291.10685631900003,
+      "end_s": 291.206851835,
+      "duration_s": 0.09999551599997858
+    },
+    {
+      "start_s": 291.309791758,
+      "end_s": 291.410531645,
+      "duration_s": 0.10073988699997471
+    },
+    {
+      "start_s": 291.70914229000005,
+      "end_s": 291.914101818,
+      "duration_s": 0.20495952799996076
+    },
+    {
+      "start_s": 293.10852067400003,
+      "end_s": 293.30881093100004,
+      "duration_s": 0.20029025700000602
+    },
+    {
+      "start_s": 293.708276972,
+      "end_s": 293.809286545,
+      "duration_s": 0.10100957299999891
+    },
+    {
+      "start_s": 294.907696443,
+      "end_s": 295.41087982100004,
+      "duration_s": 0.503183378000017
+    },
+    {
+      "start_s": 295.91109746200004,
+      "end_s": 296.011459672,
+      "duration_s": 0.10036220999995749
+    },
+    {
+      "start_s": 296.110939519,
+      "end_s": 296.313309885,
+      "duration_s": 0.20237036600002511
+    },
+    {
+      "start_s": 296.811004341,
+      "end_s": 297.11065192200005,
+      "duration_s": 0.29964758100004474
+    },
+    {
+      "start_s": 297.611015859,
+      "end_s": 298.218448522,
+      "duration_s": 0.6074326629999973
+    },
+    {
+      "start_s": 298.61075925800003,
+      "end_s": 298.810309241,
+      "duration_s": 0.19954998299999716
+    },
+    {
+      "start_s": 299.512387052,
+      "end_s": 299.819202861,
+      "duration_s": 0.3068158089999997
+    },
+    {
+      "start_s": 330.227609254,
+      "end_s": 330.32604785,
+      "duration_s": 0.09843859599999405
+    },
+    {
+      "start_s": 331.625809302,
+      "end_s": 331.824762994,
+      "duration_s": 0.19895369200003188
+    },
+    {
+      "start_s": 332.02547185500003,
+      "end_s": 332.325549581,
+      "duration_s": 0.3000777259999836
+    },
+    {
+      "start_s": 332.52593980800003,
+      "end_s": 332.726254669,
+      "duration_s": 0.2003148609999812
+    },
+    {
+      "start_s": 333.125774852,
+      "end_s": 333.234927487,
+      "duration_s": 0.10915263499998673
+    },
+    {
+      "start_s": 333.424046796,
+      "end_s": 333.527771815,
+      "duration_s": 0.10372501899996678
+    },
+    {
+      "start_s": 340.93120021100003,
+      "end_s": 341.03068309900004,
+      "duration_s": 0.09948288800001137
+    },
+    {
+      "start_s": 341.22989232400005,
+      "end_s": 341.333123522,
+      "duration_s": 0.10323119799994629
+    }
+  ],
+  "max_interval_between_associated_measurements_s": 1.099824194000007,
+  "range_m": {
+    "min": 13.00849812294927,
+    "p05": 13.567133228762087,
+    "median": 26.08273077127056,
+    "p95": 38.175486775497276,
+    "max": 38.984486338951584
+  },
+  "lead_speed_mps": {
+    "min": 0.11742431200803921,
+    "p05": 0.475641291701314,
+    "median": 4.4662215333441395,
+    "p95": 5.554471242658861,
+    "max": 5.931949422957671
+  },
+  "relative_long_mps": {
+    "min": -2.633239179144284,
+    "p05": -2.263793577370359,
+    "median": -0.6215166272260579,
+    "p95": 2.0627143950214237,
+    "max": 4.762581937125224
+  },
+  "points": {
+    "min": 3.0,
+    "p05": 5.0,
+    "median": 28.0,
+    "p95": 130.69999999999993,
+    "max": 166.0
+  },
+  "innovation_m": {
+    "min": 0.0021834956185157713,
+    "p05": 0.023767126958499238,
+    "median": 0.10719792865593983,
+    "p95": 0.3938860129239149,
+    "max": 1.1296149595276586
+  },
+  "lead_tangential_accel_2s_mps2": {
+    "min": -1.6781717245409808,
+    "p05": -0.4440544249865931,
+    "median": 0.08236577723831895,
+    "p95": 0.559244075807559,
+    "max": 0.7516622622861961
+  },
+  "accel_window_disagreement_abs_mps2": {
+    "min": 0.00016182866415948016,
+    "p05": 0.014856836579044455,
+    "median": 0.11944379803560008,
+    "p95": 0.5165795634745176,
+    "max": 1.7963843775122603
+  },
+  "extraction_compute_ms_all": {
+    "min": 41.63997700015898,
+    "p05": 47.83252569959586,
+    "median": 61.64257300042664,
+    "p95": 97.45438110003306,
+    "max": 157.33902499960095
+  },
+  "sparse_measurement_fraction_lt10": 0.12354312354312354,
+  "warnings": [
+    "Manual seed, geometric candidates, no trained vehicle classifier.",
+    "No speed/distance/acceleration ground truth; innovation is not accuracy.",
+    "Observed surface reference is not the full vehicle center or bumper clearance.",
+    "Clock and INS mounting fitted offline; planar motion compensation.",
+    "2s acceleration is a trailing-window trend; low-speed direction is undefined.",
+    "Prediction-only frames are not new measurements; >0.3s flagged stale.",
+    "After loss, no identity reassignment. Other visible candidates are unclassified.",
+    "Compute timing includes extraction/deskew/clustering but excludes bag I/O, localization, video."
+  ]
+}

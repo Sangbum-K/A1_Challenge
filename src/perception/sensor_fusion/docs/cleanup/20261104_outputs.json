@@ -1,0 +1,1282 @@
+{
+  "timestamp": "2026-11-04T12:40:09.336623+09:00",
+  "preserve_since": "2026-11-04T00:00:00+09:00",
+  "active_output": "/home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/outputs/ui_20261104_120315",
+  "deleted_files": [
+    {
+      "path": "outputs/association_axes/association.csv",
+      "bytes": 34510,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/frames.json",
+      "bytes": 3881504,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/camera.log",
+      "bytes": 5168,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/latest.jpg",
+      "bytes": 288459,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/config_used.yaml",
+      "bytes": 1287,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/lidar.log",
+      "bytes": 29742,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/association.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_axes/summary.json",
+      "bytes": 13721,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/association.csv",
+      "bytes": 50523,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/frames.json",
+      "bytes": 2544354,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/camera.log",
+      "bytes": 5168,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/latest.jpg",
+      "bytes": 275055,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/lidar.log",
+      "bytes": 43992,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/association.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_bright/summary.json",
+      "bytes": 6353,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/association.csv",
+      "bytes": 49680,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/frames.json",
+      "bytes": 2537657,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/camera.log",
+      "bytes": 6030,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/latest.jpg",
+      "bytes": 123841,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/lidar.log",
+      "bytes": 43897,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/association.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_check/summary.json",
+      "bytes": 6306,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/python3_172853_1793716299191.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/camera_driver_gv_157493_1793715438004.log",
+      "bytes": 3468,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/a2_camera_node_174022_1793716356807.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/hesai_ros_driver_node_174021_1793716356215.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/hesai_ros_driver_node_157353_1793715437425.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/association_node_157355_1793715437505.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/association_node_174023_1793716356290.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/camera_driver_gv_173051_1793716300446.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/a2_camera_node_177964_1793716579761.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/hesai_ros_driver_node_172927_1793716299851.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/python3_157276_1793715436724.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/hesai_ros_driver_node_165901_1793715914895.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/camera_driver_gv_178086_1793716579682.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/camera_driver_gv_174157_1793716356706.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/association_node_172929_1793716299926.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/a2_camera_node_172928_1793716300572.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/association_node_177965_1793716579186.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/camera_driver_gv_166030_1793715915452.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/association_node_165903_1793715914971.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/a2_camera_node_165902_1793715915586.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/hesai_ros_driver_node_177963_1793716579109.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/python3_177887_1793716578416.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/python3_165823_1793715914193.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/a2_camera_node_157354_1793715437944.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/python3_173946_1793716355553.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/2026-11-03-23-32-36-642464-ubuntu22-174020/launch.log",
+      "bytes": 776,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/2026-11-03-23-36-19-615038-ubuntu22-177961/launch.log",
+      "bytes": 776,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/2026-11-03-23-17-17-932591-ubuntu22-157352/launch.log",
+      "bytes": 776,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/2026-11-03-23-31-40-377321-ubuntu22-172926/launch.log",
+      "bytes": 632,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_ros_logs/2026-11-03-23-25-15-384968-ubuntu22-165900/launch.log",
+      "bytes": 776,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/association.csv",
+      "bytes": 52646,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/frames.json",
+      "bytes": 3652785,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/camera.log",
+      "bytes": 5984,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/stability.json",
+      "bytes": 6050,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/latest.jpg",
+      "bytes": 280788,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/config_used.yaml",
+      "bytes": 1182,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/lidar.log",
+      "bytes": 43992,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/association.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable/summary.json",
+      "bytes": 8812,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/association.csv",
+      "bytes": 53079,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/frames.json",
+      "bytes": 5834641,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/camera.log",
+      "bytes": 5168,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/stability.json",
+      "bytes": 9619,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/latest.jpg",
+      "bytes": 291821,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/config_used.yaml",
+      "bytes": 1256,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/lidar.log",
+      "bytes": 43898,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/association.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/association_stable_fine/summary.json",
+      "bytes": 13731,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0000.jpg",
+      "bytes": 305613,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0188.jpg",
+      "bytes": 314444,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0127.jpg",
+      "bytes": 313363,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0248.jpg",
+      "bytes": 312648,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0158.jpg",
+      "bytes": 316438,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0218.jpg",
+      "bytes": 315293,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0097.jpg",
+      "bytes": 310340,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0068.jpg",
+      "bytes": 311709,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0038.jpg",
+      "bytes": 310788,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/frame_0007.jpg",
+      "bytes": 307973,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/summary.json",
+      "bytes": 1039,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis/association.json",
+      "bytes": 4986755,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0000.jpg",
+      "bytes": 293004,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0271.jpg",
+      "bytes": 292385,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0182.jpg",
+      "bytes": 292333,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0062.jpg",
+      "bytes": 292026,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0091.jpg",
+      "bytes": 293048,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/a2.json",
+      "bytes": 555526,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0150.jpg",
+      "bytes": 292653,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0241.jpg",
+      "bytes": 292233,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0031.jpg",
+      "bytes": 293027,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0121.jpg",
+      "bytes": 292789,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/frame_0211.jpg",
+      "bytes": 293227,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/driving_diagnosis_2/association.json",
+      "bytes": 1806466,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live/benchmark.json",
+      "bytes": 206771,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live/camera.log",
+      "bytes": 5153,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live_shm/benchmark.json",
+      "bytes": 215505,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live_shm/camera.log",
+      "bytes": 5263,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live_shm/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live_tuned/benchmark.json",
+      "bytes": 208487,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live_tuned/camera.log",
+      "bytes": 5263,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_live_tuned/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_147078_1793714871783.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_141027_1793714527544.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_138111_1793714385328.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_148187_1793714938406.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_140970_1793714526446.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/camera_driver_gv_148316_1793714944241.log",
+      "bytes": 3468,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_145859_1793714796437.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_144224_1793714691221.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_147135_1793714872920.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_139494_1793714437582.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_138410_1793714398313.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_138354_1793714397402.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_138055_1793714384213.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/camera_driver_gv_144354_1793714697002.log",
+      "bytes": 3468,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_144168_1793714690131.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_148129_1793714937259.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/python3_139438_1793714436515.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/camera_driver_gv_141155_1793714532265.log",
+      "bytes": 3388,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/a2_camera_node_145915_1793714797365.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/2026-11-03-23-09-04-170204-ubuntu22-148311/launch.log",
+      "bytes": 768,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/2026-11-03-23-02-12-196274-ubuntu22-141148/launch.log",
+      "bytes": 768,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_ros_logs/2026-11-03-23-04-56-931504-ubuntu22-144348/launch.log",
+      "bytes": 768,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_synthetic/benchmark.json",
+      "bytes": 209325,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_synthetic/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_synthetic_shm/benchmark.json",
+      "bytes": 109112,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_synthetic_shm/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_synthetic_tuned/benchmark.json",
+      "bytes": 104689,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/gpu_synthetic_tuned/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_cpp_audit/estimate.log",
+      "bytes": 169,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_cpp_audit/camera.log",
+      "bytes": 5910,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_cpp_audit/lidar.log",
+      "bytes": 15492,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_cpp_audit/ins.log",
+      "bytes": 170,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_cpp_audit/a2.log",
+      "bytes": 169,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit/sensors.json",
+      "bytes": 644,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit/camera.log",
+      "bytes": 5094,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit/lidar.log",
+      "bytes": 699,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit/ins.log",
+      "bytes": 246,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/gnss_js_ajax2.js",
+      "bytes": 35367,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/sensors.json",
+      "bytes": 983,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/gnss_js_menu.js",
+      "bytes": 21966,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/camera.log",
+      "bytes": 5094,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/lidar.log",
+      "bytes": 24897,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/ins.log",
+      "bytes": 170,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/gnss_home.html",
+      "bytes": 5901,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/gnss_main.html",
+      "bytes": 20626,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/live_sensor_audit2/gnss_js_ajax.js",
+      "bytes": 19760,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_check/sensors.json",
+      "bytes": 9704,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_check/estimate.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_check/camera.log",
+      "bytes": 5152,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_check/lidar.log",
+      "bytes": 15492,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_check/ins.log",
+      "bytes": 170,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_check/a2.log",
+      "bytes": 169,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/python3_124478_1793713770450.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/a2_camera_node_124552_1793713771289.log",
+      "bytes": 169,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/hesai_ros_driver_node_124550_1793713771126.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/gsof_client_node_124551_1793713771132.log",
+      "bytes": 170,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/camera_driver_gv_124629_1793713771468.log",
+      "bytes": 3388,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/fusion_node_124553_1793713771156.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/sensor_logs/2026-11-03-22-49-31-392677-ubuntu22-124549/launch.log",
+      "bytes": 767,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/test_logs/python3_121679_1793713663004.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/test_logs/a2_camera_node_121920_1793713669258.log",
+      "bytes": 169,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/test_logs/python3_121849_1793713668910.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/test_logs/fusion_node_122126_1793713676845.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/test_logs/fusion_node_121714_1793713663137.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/test_logs/python3_122094_1793713676611.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ui.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/camera.log",
+      "bytes": 5748,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/latest.jpg",
+      "bytes": 288673,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/lidar.log",
+      "bytes": 29457,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/shadow.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ros_logs/camera_driver_gv_188633_1793717124877.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ros_logs/hesai_ros_driver_node_188432_1793717124403.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ros_logs/fusion_node_188434_1793717124634.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ros_logs/association_node_188435_1793717124720.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ros_logs/a2_camera_node_188433_1793717125055.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234521/ros_logs/2026-11-03-23-45-24-820442-ubuntu22-188431/launch.log",
+      "bytes": 459,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ui.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/camera.log",
+      "bytes": 5749,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/latest.jpg",
+      "bytes": 296373,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/lidar.log",
+      "bytes": 123022,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/shadow.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ros_logs/camera_driver_gv_189725_1793717172366.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ros_logs/fusion_node_189525_1793717172044.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ros_logs/hesai_ros_driver_node_189523_1793717171823.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ros_logs/a2_camera_node_189524_1793717172532.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ros_logs/association_node_189526_1793717172139.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234609/ros_logs/2026-11-03-23-46-12-289902-ubuntu22-189522/launch.log",
+      "bytes": 459,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ui.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/association_used.yaml",
+      "bytes": 1493,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/isolation.env",
+      "bytes": 75,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/camera.log",
+      "bytes": 5750,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/latest.jpg",
+      "bytes": 296854,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/lidar.log",
+      "bytes": 592172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/shadow.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/a2_camera_node_193335_1793717377616.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/fusion_node_193336_1793717377174.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/python3_193143_1793717374188.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/association_node_193337_1793717377253.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/camera_driver_gv_193542_1793717377427.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/python3_193166_1793717374414.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/hesai_ros_driver_node_193334_1793717376956.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/ros_logs/2026-11-03-23-49-37-372007-ubuntu22-193333/launch.log",
+      "bytes": 459,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00011.mp4",
+      "bytes": 4264527,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00004.mp4",
+      "bytes": 18250587,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00006.mp4",
+      "bytes": 16653391,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00007.mp4",
+      "bytes": 18935009,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00010.mp4",
+      "bytes": 15672293,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00009.mp4",
+      "bytes": 17353062,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00002.mp4",
+      "bytes": 21975657,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/frames.csv",
+      "bytes": 256943,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00001.mp4",
+      "bytes": 20160906,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00005.mp4",
+      "bytes": 16352252,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00008.mp4",
+      "bytes": 17921144,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_20261103_234933/recordings/ui_00003.mp4",
+      "bytes": 20592645,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ui.log",
+      "bytes": 271,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/camera.log",
+      "bytes": 5737,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/latest.jpg",
+      "bytes": 288113,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/lidar.log",
+      "bytes": 37628,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/a2.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/shadow.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/a2_camera_node_183537_1793716858259.log",
+      "bytes": 239,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/camera_driver_gv_183739_1793716858102.log",
+      "bytes": 3395,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/python3_183356_1793716855036.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/hesai_ros_driver_node_183536_1793716857596.log",
+      "bytes": 71,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/association_node_183539_1793716857916.log",
+      "bytes": 218,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/python3_183339_1793716854836.log",
+      "bytes": 0,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/fusion_node_183538_1793716857801.log",
+      "bytes": 172,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "outputs/ui_live/ros_logs/2026-11-03-23-40-58-043001-ubuntu22-183535/launch.log",
+      "bytes": 448,
+      "reason": "previous-day output"
+    },
+    {
+      "path": "build_gpu/runtime/CMakeFiles/lidar_domain_bridge.dir/src/lidar_domain_bridge.cpp.o",
+      "bytes": 1236072,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "build_gpu/runtime/CMakeFiles/lidar_domain_bridge.dir/src/lidar_domain_bridge.cpp.o.d",
+      "bytes": 43326,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "cpp/launch/__pycache__/hikrobot_gpu.launch.cpython-310.pyc",
+      "bytes": 4818,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/msg/__pycache__/_cluster_track.cpython-310.pyc",
+      "bytes": 21833,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/msg/__pycache__/_brake_estimate.cpython-310.pyc",
+      "bytes": 14187,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/msg/__pycache__/_a2_features.cpython-310.pyc",
+      "bytes": 6360,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/msg/__pycache__/_association.cpython-310.pyc",
+      "bytes": 17558,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/msg/__pycache__/__init__.cpython-310.pyc",
+      "bytes": 565,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/msg/__pycache__/_ego_motion.cpython-310.pyc",
+      "bytes": 6738,
+      "reason": "regenerable build object / bytecode"
+    },
+    {
+      "path": "install_gpu/local/lib/python3.10/dist-packages/a1_fusion_cpp/__pycache__/__init__.cpython-310.pyc",
+      "bytes": 227,
+      "reason": "regenerable build object / bytecode"
+    }
+  ],
+  "deleted_output_directories": [
+    "outputs/association_axes",
+    "outputs/association_bright",
+    "outputs/association_check",
+    "outputs/association_ros_logs",
+    "outputs/association_stable",
+    "outputs/association_stable_fine",
+    "outputs/driving_diagnosis",
+    "outputs/driving_diagnosis_2",
+    "outputs/gpu_live",
+    "outputs/gpu_live_shm",
+    "outputs/gpu_live_tuned",
+    "outputs/gpu_ros_logs",
+    "outputs/gpu_synthetic",
+    "outputs/gpu_synthetic_shm",
+    "outputs/gpu_synthetic_tuned",
+    "outputs/live_cpp_audit",
+    "outputs/live_sensor_audit",
+    "outputs/live_sensor_audit2",
+    "outputs/sensor_check",
+    "outputs/sensor_logs",
+    "outputs/test_logs",
+    "outputs/ui_20261103_234521",
+    "outputs/ui_20261103_234609",
+    "outputs/ui_20261103_234933",
+    "outputs/ui_20261103_234947",
+    "outputs/ui_live"
+  ],
+  "total_bytes": 226696200,
+  "policy": "Only independent project outputs before today and regenerable objects/bytecode. No symlink targets, original datasets, model/runtime files, sensor settings or external processes modified."
+}

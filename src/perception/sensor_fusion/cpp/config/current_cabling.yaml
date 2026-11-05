@@ -1,0 +1,24 @@
+# Observed on 2026-11-03; network addresses only, NOT geometric calibration.
+camera:
+  interface: enp5s0
+  model: Hikrobot-MV-CS023-10GC
+  serial: DA8931780
+  mac: '34:bd:20:7f:76:dd'
+  device_ip: 169.254.222.118
+  host_secondary_ip: 169.254.222.1/16
+  link_mbps: 1000
+lidar:
+  interface: enp0s31f6
+  device_ip: 192.168.1.201
+  host_ip: 192.168.1.102/24
+  host_route_metric: 40
+  link_mbps: 100
+gnss_imu_device:
+  interface: enp4s0
+  device_ip: 192.168.53.100
+  host_secondary_ip: 192.168.53.20/24
+  gsof_tcp_port: 5017
+  link_mbps: 100
+  tcp_connection_verified: true
+  gsof_data_received: false
+  raw_imu_received: false

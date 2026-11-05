@@ -1,0 +1,9 @@
+{
+  "ignore": "NetworkManager automatic connection.timestamp refresh only",
+  "unchanged": {
+    "Wired connection 1": true,
+    "a1-sensor-lidar": true,
+    "a1-sensor-gnss": true,
+    "Wired connection 4": true
+  }
+}

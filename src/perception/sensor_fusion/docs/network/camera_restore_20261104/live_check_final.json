@@ -1,0 +1,14 @@
+{
+  "seconds": 10.00854790700032,
+  "counts": {
+    "a2": 211,
+    "camera": 210,
+    "association": 59,
+    "lidar": 58
+  },
+  "last": {
+    "history_ready": true,
+    "status": "no_confirmed_cluster",
+    "processing_ms": 71.280439
+  }
+}

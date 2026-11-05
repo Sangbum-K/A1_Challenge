@@ -1,0 +1,50 @@
+/a1_association:
+  ros__parameters:
+    bev_forward_range_m: 70.0
+    bin_search_max: 39
+    bin_search_min: 0
+    calibration_verified: false
+    camera_cx: 640.0
+    camera_cy: 360.0
+    camera_fx: 640.0
+    camera_fy: 640.0
+    camera_position_m:
+    - 0.8
+    - 0.0
+    - -0.3
+    camera_rpy_rad:
+    - 0.0
+    - 0.0
+    - 0.0
+    clock_verified: false
+    cluster_min_points: 5
+    cluster_tolerance_m: 0.45
+    corridor_half_width_m: 12.0
+    csv_path: ''
+    fragment_merge_gap_m: 0.45
+    horizontal_iou_threshold: 0.15
+    image_topic: /camera_driver_gv/vis/image_raw
+    lidar_roi_center_deg: 0.0
+    lidar_time_offset_s: 0.0
+    lidar_topic: /lidar_points
+    lidar_yaw_rad: 1.5707963267948966
+    min_height_above_ground_m: 0.15
+    pair_slop_s: 0.08
+    presence_edge_threshold: 0.25
+    presence_hold_threshold: 0.35
+    presence_threshold: 0.5
+    preview_path: /home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/outputs/ui_20261103_234933/latest.jpg
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    recording_dir: /home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/outputs/ui_20261103_234933/recordings
+    sensor_height_m: 1.8
+    show_debug_clusters: false
+    show_window: true
+    use_sim_time: false
+    voxel_size_m: 0.16
+

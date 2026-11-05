@@ -1,0 +1,305 @@
+{
+  "root": "/home/ailab/git",
+  "files_scanned": 89806,
+  "bags": [
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/datasets/localization_20261104/a1_loc_20261104_114432",
+      "start": {
+        "nanoseconds_since_epoch": 1793760273325328070
+      },
+      "topics": {
+        "/gsof_client/navsat": 0,
+        "/tf_static": 6,
+        "/localization/accel": 0,
+        "/lidar_odometry/pose_quality": 2344,
+        "/lidar_odometry/pose": 2344,
+        "/localization/odom": 0,
+        "/diagnostics": 465,
+        "/initialpose": 1,
+        "/a1_gnss/odom": 0,
+        "/a1_gnss/navsat": 0,
+        "/a1_gnss/accel": 0,
+        "/lidar_packets_loss": 9324,
+        "/tf": 0,
+        "/gsof_client/odom": 0
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/datasets/localization_20261104/a1_loc_20261104_113808",
+      "start": {
+        "nanoseconds_since_epoch": 1793759889139707921
+      },
+      "topics": {
+        "/a1_gnss/accel": 0,
+        "/tf_static": 6,
+        "/a1_gnss/navsat": 0,
+        "/lidar_packets_loss": 3658,
+        "/lidar_odometry/pose": 1855,
+        "/lidar_odometry/pose_quality": 1855,
+        "/gsof_client/navsat": 0,
+        "/tf": 0,
+        "/gsof_client/odom": 0,
+        "/initialpose": 0,
+        "/a1_gnss/odom": 0,
+        "/diagnostics": 186,
+        "/localization/odom": 0,
+        "/localization/accel": 0
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/datasets/localization_20261104/a1_loc_20261104_115541",
+      "start": {
+        "nanoseconds_since_epoch": 1793760942029406679
+      },
+      "topics": {
+        "/initialpose": 3,
+        "/tf_static": 3,
+        "/localization/accel": 0,
+        "/lidar_packets_loss": 7542,
+        "/lidar_odometry/pose_quality": 7228,
+        "/lidar_odometry/pose": 7228,
+        "/gsof_client/navsat": 0,
+        "/localization/odom": 0,
+        "/diagnostics": 756,
+        "/a1_gnss/odom": 0,
+        "/gsof_client/odom": 0,
+        "/tf": 0,
+        "/a1_gnss/navsat": 0,
+        "/a1_gnss/accel": 0
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261008_110207_video_check/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1791424931060042927
+      },
+      "topics": {
+        "/camera_driver_gv/vis/camera_info": 580,
+        "/camera_driver_gv/vis/image_raw": 580
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261008_110552_exp600/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1791425156227588864
+      },
+      "topics": {
+        "/camera_driver_gv/vis/camera_info": 507,
+        "/camera_driver_gv/vis/image_raw": 507
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261008_110425_exp1000/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1791425068752087738
+      },
+      "topics": {
+        "/camera_driver_gv/vis/camera_info": 1448,
+        "/camera_driver_gv/vis/image_raw": 1448
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261008_110642_full_run/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1791425205558212900
+      },
+      "topics": {
+        "/camera_driver_gv/vis/image_raw": 24704,
+        "/camera_driver_gv/vis/camera_info": 24704
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261007_173348_first_live/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1791362031306111892
+      },
+      "topics": {
+        "/camera_driver_gv/vis/image_raw": 5399,
+        "/camera_driver_gv/vis/camera_info": 5399
+      }
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261007_174657_second_live/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1791362820949066222
+      },
+      "topics": {
+        "/camera_driver_gv/vis/camera_info": 2792,
+        "/camera_driver_gv/vis/image_raw": 2792
+      }
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918/payload/Desktop/MPC_test/runs/sim_gnss_20261029/y2_replay2",
+      "start": {
+        "nanoseconds_since_epoch": 1793276571006842240
+      },
+      "topics": {
+        "/gsof_client/odom": 12910,
+        "/gsof_client/navsat": 12910,
+        "/a1_gnss/navsat": 12915,
+        "/tf": 25830,
+        "/a1_gnss/odom": 12915,
+        "/mpc_test/gt_odom": 12915,
+        "/tf_static": 2
+      }
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918/payload/Desktop/MPC_test/runs/sim_gnss_20261029/lap1",
+      "start": {
+        "nanoseconds_since_epoch": 1793275294309617339
+      },
+      "topics": {
+        "/a1_gnss/odom": 10740,
+        "/gsof_client/odom": 10770,
+        "/gsof_client/navsat": 10770,
+        "/tf_static": 2,
+        "/mpc_test/gt_odom": 10827,
+        "/a1_gnss/navsat": 10740,
+        "/tf": 21572
+      }
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918/payload/Desktop/MPC_test/runs/sim_gnss_20261029/y2_replay3",
+      "start": {
+        "nanoseconds_since_epoch": 1793276912406296642
+      },
+      "topics": {
+        "/a1_gnss/odom": 52099,
+        "/tf": 104198,
+        "/a1_gnss/navsat": 52099,
+        "/gsof_client/navsat": 52104,
+        "/gsof_client/odom": 52104,
+        "/mpc_test/gt_odom": 52099,
+        "/tf_static": 2
+      }
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918/payload/Desktop/MPC_test/runs/sim_gnss_20261029/y2_replay_wrong_heading",
+      "start": {
+        "nanoseconds_since_epoch": 1793276192228470025
+      },
+      "topics": {
+        "/a1_gnss/odom": 16374,
+        "/gsof_client/navsat": 16379,
+        "/gsof_client/odom": 16379,
+        "/tf_static": 2,
+        "/mpc_test/gt_odom": 16379,
+        "/a1_gnss/navsat": 16374,
+        "/tf": 32759
+      }
+    },
+    {
+      "path": "/home/ailab/git/A1-BSW/measurements/2026-11-03_signal_audit/raw/l4f/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1793709468945517508
+      },
+      "topics": {
+        "/control/status/command_on_bus": 0,
+        "/control/status/control_info": 0,
+        "/control/status/wheel_info": 0,
+        "/diagnostics": 14
+      }
+    },
+    {
+      "path": "/home/ailab/git/A1-BSW/measurements/2026-11-03_signal_audit/raw/l4g/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1793710079467653645
+      },
+      "topics": {
+        "/control/status/command_on_bus": 7914,
+        "/control/status/control_info": 7537,
+        "/control/status/wheel_info": 7537,
+        "/diagnostics": 159
+      }
+    },
+    {
+      "path": "/home/ailab/git/A1-BSW/measurements/2026-11-03_signal_audit/raw/l4e/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1793709175684006369
+      },
+      "topics": {
+        "/diagnostics": 23,
+        "/control/status/wheel_info": 0,
+        "/control/status/control_info": 0,
+        "/control/status/command_on_bus": 0
+      }
+    },
+    {
+      "path": "/home/ailab/git/A1-BSW/measurements/2026-11-03_signal_audit/raw/l4h/bag",
+      "start": {
+        "nanoseconds_since_epoch": 1793710286188025758
+      },
+      "topics": {
+        "/diagnostics": 594,
+        "/control/status/wheel_info": 28290,
+        "/control/status/control_info": 28290,
+        "/control/status/command_on_bus": 29703
+      }
+    }
+  ],
+  "archives": [
+    {
+      "path": "/home/ailab/git/A1-BSW.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918.tar.gz",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/A1_localization.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/20261008_110642_full_run/a2_overlay.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/sangbum/cuda-11.8/nsightee_plugins/com.nvidia.cuda.repo-1.0.0-SNAPSHOT.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/Seunghwan/racingline.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/Seunghwan/simulator.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/Seunghwan/controllers.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/A1 Challenge Simulator/simulator/fsds-v2.2.0-linux.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/main_pc_work_20260918/payload/Desktop/MPC_without_change.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/A1_localization/maps/track_merged.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/A1-BSW/TalkFile_kf-1600_CAN_GPSINS_CSV.zip.zip",
+      "bag_or_today_members": []
+    },
+    {
+      "path": "/home/ailab/git/A1-BSW/a1_race_capture/vehicle_20261007.tar.gz",
+      "bag_or_today_members": []
+    }
+  ],
+  "data_directory_symlinks": [
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/datasets/a1_map_20261008_111019",
+      "target": "/home/ailab/.ros/a1_localization/bags/a1_map_20261008_111019"
+    }
+  ],
+  "errors": []
+}

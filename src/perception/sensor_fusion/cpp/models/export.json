@@ -1,0 +1,34 @@
+{
+  "torch": "2.14.0+cpu",
+  "timm": "1.0.30",
+  "backbone": {
+    "matched_keys": 774,
+    "missing_keys": 0,
+    "unexpected_keys": 0,
+    "parameter_coverage": 1.0
+  },
+  "a2": {
+    "matched_keys": 820,
+    "missing_keys": 0,
+    "unexpected_keys": 0,
+    "missing_required": []
+  },
+  "head_max_abs_errors": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "shape": [
+    1,
+    40,
+    7
+  ],
+  "ego_motion": [
+    0,
+    0
+  ],
+  "checkpoint_sha256": {
+    "seg_pretrain_fx640_v3_backbone.pt": "8b9262a5bdd214081b62223f1fee3bb96f50c55b3f3b5bcc3300a5ba30a8fd91",
+    "a2_mf20_v2s_n20.pt": "c095b16f15cd73614f2f829bba774095e9c65626b895d4cf1558692953f44003"
+  }
+}

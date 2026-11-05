@@ -1,0 +1,20 @@
+Source context domain=115
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+PASS: one publisher, three increasing-stamp hesai_lidar clouds received
+Source context domain=115
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+Sink context domain=116 localhost=1
+sink forwarded=30 subscribers=1
+publishers=1 received=35 state=LIVE
+sink forwarded=60 subscribers=1
+publishers=1 received=70 state=LIVE
+sink forwarded=90 subscribers=1
+publishers=1 received=105 state=LIVE
+Source context domain=115
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+Multiple source publishers; refusing mixed LiDAR input
+Source context domain=115
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+No verified LiDAR stream: start the localization/shared driver first. Publishers=0, valid clouds=0
+distinct domains and an absolute source topic required
+PASS: separate processes local0->local1, 128k-point byte/stamp preservation, one-way, check-only, external-owner survival, duplicate/missing/loop rejection

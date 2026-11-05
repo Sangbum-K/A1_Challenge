@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.16)
+project(lead_p5_numeric LANGUAGES CXX)
+add_executable(p5_numeric p5_numeric.cpp)
+target_compile_features(p5_numeric PRIVATE cxx_std_17)
+target_compile_options(p5_numeric PRIVATE -Wall -Wextra -Wpedantic)

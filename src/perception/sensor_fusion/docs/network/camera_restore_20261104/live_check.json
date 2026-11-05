@@ -1,0 +1,15 @@
+{
+  "seconds": 10.016644657998768,
+  "counts": {
+    "camera": 211,
+    "a2": 210
+  },
+  "last": {
+    "image": [
+      1280,
+      720,
+      "bayer_rggb8"
+    ],
+    "history_ready": true
+  }
+}

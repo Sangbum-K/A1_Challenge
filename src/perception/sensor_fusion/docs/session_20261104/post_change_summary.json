@@ -1,0 +1,16 @@
+{
+  "duration_s": 60.004725610999685,
+  "message_counts": {
+    "a2": 1260,
+    "association": 600,
+    "p5": 600,
+    "cloud_stats": 57
+  },
+  "camera_status_counts": {
+    "no_confirmed_cluster": 570,
+    "candidate_extrinsics_unverified": 30
+  },
+  "selected_range_min_m": 9.86757609155042,
+  "selected_range_max_m": 37.90372721247637,
+  "note": "Selected ranges alone do not establish target identity or 100m real detection. Same ID continuity must be checked separately."
+}

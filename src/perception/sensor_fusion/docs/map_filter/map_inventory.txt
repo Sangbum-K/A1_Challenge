@@ -1,0 +1,15 @@
+Loading plugin(s): /opt/ros/humble/lib/x86_64-linux-gnu/libmola_metric_maps.so
+[mm-info] Reading input map from: '/home/ailab/git/A1_Total/maps/track_20261104/clean/map.mm'...
+[mm-info] Done read map in 0.298926 sec. Contents:
+georeferenced: lat=37deg 17' 48.0489'' lon=127deg 12' 27.6053'' (37.296680244  127.207668142)  h=152.543972 T_enu_map=[-17.210365 -27.799669 -0.417023 147.978832 -1.659736 -0.993902] std_x=0.015 std_y=0.015 std_z=0.015 std_yaw=0.03 deg std_pitch=0.03 deg std_roll=0.04 deg
+, 0 points, 0 voxels in 1 layers ("localmap":KeyframePointCloudMap: 178 keyframes, 5.32 M points. )
+Loading plugin(s): /opt/ros/humble/lib/x86_64-linux-gnu/libmola_metric_maps.so
+[mm-info] Reading input map from: '/home/ailab/git/A1_Total/maps/track_20261104/map.mm'...
+[mm-info] Done read map in 0.719837 sec. Contents:
+georeferenced: lat=37deg 17' 47.2084'' lon=127deg 12' 26.7972'' (37.296446768  127.207443677)  h=152.595290 T_enu_map=[2.650921 -1.896732 -0.433332 147.964322 -1.687198 -0.982103] std_x=0.012 std_y=0.012 std_z=0.012 std_yaw=0.02 deg std_pitch=0.03 deg std_roll=0.04 deg
+, 0 points, 0 voxels in 1 layers ("localmap":KeyframePointCloudMap: 321 keyframes, 10.28 M points. )
+Loading plugin(s): /opt/ros/humble/lib/x86_64-linux-gnu/libmola_metric_maps.so
+[mm-info] Reading input map from: '/home/ailab/git/A1_Total/maps/track_merged/map.mm'...
+[mm-info] Done read map in 1.8523 sec. Contents:
+georeferenced: lat=37deg 17' 46.8670'' lon=127deg 12' 25.1177'' (37.296351944  127.206977145)  h=155.703605 T_enu_map=[0.000000 0.000000 0.000000 0.000000 0.000000 0.000000] std_x=0.020 std_y=0.020 std_z=0.020 std_yaw=0.05 deg std_pitch=0.05 deg std_roll=0.05 deg
+, 0 points, 0 voxels in 1 layers ("localmap":KeyframePointCloudMap: 2739 keyframes, 27.35 M points. )

@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/home/ailab/git/A1_localization/install/trimble_driver_ros/lib/trimble_driver_ros/gsof_client_node",
+    "--ros-args",
+    "-r",
+    "__node:=gsof_client",
+    "--params-file",
+    "/home/ailab/git/A1_localization/src/a1/a1_gnss_bringup/config/gsof_client.yaml",
+    "--params-file",
+    "/tmp/launch_params_t2frevov",
+    ""
+  ],
+  "ros_environment": {
+    "ROS_DOMAIN_ID": "0",
+    "ROS_LOCALHOST_ONLY": "0"
+  }
+}

@@ -1,0 +1,5 @@
+NAME                UUID                                  DEVICE          
+Wired connection 1  7ead381e-d827-3a16-84eb-5cfeb1950f55  enp5s0          
+Wired connection 4  1280259c-baa0-3128-8094-2fc03bdd16ce  enxfe9ca78be6f6 
+a1-sensor-gnss      eef12689-435b-4adf-9b2a-5579fbe08892  enp4s0          
+a1-sensor-lidar     657640db-55c1-4fd9-bd0d-a80d1dbd782c  enp0s31f6       
