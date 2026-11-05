@@ -3,7 +3,8 @@
 실물 카메라 입력으로 아래 perception 경로가 **지속적으로 21 FPS를 낼 수 있는지** 검증하기 위한 독립 프로젝트다.
 
 ```text
-physical camera
+Hikrobot camera → camera_aravis2 → ROS2 sensor_msgs/Image (BayerRG8)
+  → cv_bridge debayer
   → 720×1280 BGR/RGB 확인
   → ROI y=235:485
   → ImageNet normalization
@@ -15,6 +16,57 @@ physical camera
 ```
 
 범위는 `a₂` 출력까지다. `f₁`, `f₂`, pedal, steering, raceline, ROS/MORAI closed-loop는 실험 대상이 아니다.
+
+최신 실험 기록은 [2026-09-18 실외 카트 인식 시험](RESULTS_2026-09-18.md)이다.
+실내 모니터 재촬영 단계의 결론은 [2026-09-14 실험 요약](RESULTS_2026-09-14.md)에 있다.
+
+## 실행
+
+Nuvo에서 새 터미널을 열면 프로젝트 디렉터리로 이동한다. `./run.sh`가 ROS2와
+프로젝트 `.venv`를 자동으로 준비하고, `aim`·`live`·`bench`에서는 카메라 드라이버도
+시작한다. 일반 실험에는 별도 `source`나 `ros2 launch`가 필요 없다.
+
+```bash
+cd /home/ailab/git/sangbum/A1_Challenge-main/A1_RealCamera_A2_21FPS
+./run.sh check
+./run.sh aim
+```
+
+`check`는 카메라 연결, GPU, 저장 공간과 커널을 확인한다. 이전 21 FPS 통과 기준은
+`6.8.0-138-generic` 부팅이다. `6.8.1-1059-realtime`의 A1-BSW 설정에서는 약
+15–16 FPS였으므로, `check`의 문제를 해결하고 `bench`로 다시 측정한다.
+`aim`에서는 모델이 보는 초록 영역에 차량을 맞추고 초점·노출을 조절한다.
+`[`/`]`로 노출을 바꾸고 `q`로 종료한 뒤, 화면에 표시된 노출값을 다음 명령에 넣는다.
+
+```bash
+./run.sh bench --secs 60 --exposure 2000
+./run.sh live --exposure 2000 --obj-thr 0.5 --bag --out outputs/h120_d20_static
+```
+
+위 `2000` µs와 `h120_d20_static`은 예시다. 실제 노출은 `aim`에서 정하고,
+결과 폴더 이름에는 장착 높이와 실제 거리 조건을 적는다. `bench`는 화면·영상·전체
+A₂ 로그를 끈 **21 FPS 처리량 측정**이다. `live`는 화면, overlay MP4, 매 프레임
+`(40,7)` A₂ JSON을 저장한다. `--bag`은 원본 BayerRG8 영상도 녹화하며 약
+1.2 GB/분을 사용한다. 정지 카메라 시험에서는 기본 ego 입력 `[0,0]`을 유지한다.
+
+| 동작 | 명령/키 |
+|---|---|
+| 모델 없이 조준·노출 확인 | `./run.sh aim` |
+| 실시간 A₂ 화면 | `./run.sh live --exposure 2000` |
+| 20초만 기록 | `./run.sh live --exposure 2000 --secs 20 --out outputs/test_20s` |
+| 녹화 입력 재생, 표시 threshold 비교 | `./run.sh replay outputs/h120_d20_static/bag --obj-thr 0.7` |
+| 카메라 기능 이름 확인 | `./run.sh features` (카메라가 다른 프로그램에서 사용 중이지 않을 때) |
+| 화면에서 정상 종료 | `q` 또는 `Esc` (`aim`/`live`) |
+| 터미널에서 정상 종료 | `Ctrl-C` |
+| 잔류 프로세스 정리 | `./run.sh stop` |
+| 전체 옵션 | `./run.sh help` |
+
+`--obj-thr` 기본값은 `0.5`이며 차량 표시와 lead bin 선택에만 적용된다. A₂ 원본
+거리·속도 값은 바뀌지 않는다. `live` 결과는 지정한 `--out` 폴더의
+`frames.jsonl`, `summary.json`, `a2_overlay.mp4`에서 확인한다. 실외 20 m 거리와
+종·횡 상대속도 시험 순서는 [현장 체크리스트](docs/OUTDOOR_TEST_CHECKLIST_KR.md#8-20-m-거리와-상대속도-현장-시험-2026-09-27)에 있다.
+
+아래의 `ros2 launch`와 Python 직접 실행 예시는 개별 구성요소 점검용이다.
 
 ## 이 프로젝트가 답할 질문
 
@@ -34,10 +86,10 @@ physical camera
 
 특징:
 
-- OpenCV UVC camera 입력
-- capture thread는 최신 frame 하나만 유지해 오래된 frame queue 누적 방지
+- `camera_aravis2` ROS2 BayerRG8 입력(기본)과 OpenCV UVC prototype(`--input uvc`)
+- ROS2 sensor-data QoS depth 1 및 최신 frame 하나만 유지해 queue 누적 방지
 - camera가 제공한 실제 해상도/FPS 기록
-- 21-frame history를 host timestamp 기준으로 구성
+- 21-frame history를 ROS header timestamp 기준으로 구성(UVC는 host timestamp)
 - startup 동안 반복된 history와 steady-state를 분리
 - preprocessing/backbone/a₂별 p50/p95/p99 latency
 - camera frame skip, history slot age error, duplicate slot 비율 기록
@@ -75,18 +127,19 @@ python3 scripts/verify_portable_bundle.py
 
 ## 환경
 
-```bash
-conda env create -f environment.yml
-conda activate a1-real-camera-a2
-```
-
-또는 실행 장치에 맞는 PyTorch를 먼저 설치한 뒤:
+Nuvo에는 프로젝트 전용 `.venv`가 준비되어 있다. 새 terminal마다 ROS2를 먼저 source하는
+아래 helper를 사용한다.
 
 ```bash
-pip install -r requirements.txt
+cd /home/ailab/git/sangbum/A1_Challenge-main/A1_RealCamera_A2_21FPS
+source scripts/activate_nuvo_env.sh
 ```
 
-현재 이 workspace의 Python에는 PyTorch가 없으므로 카메라/model runtime은 아직 실행하지 못했다. Ubuntu NVIDIA GPU에서는 먼저 해당 GPU/driver에 맞는 PyTorch build가 설치됐는지 확인해야 한다.
+Nuvo RTX A5000의 470.256.02 driver에 맞춰 PyTorch 2.4.1 CUDA 11.8 wheel을 사용한다.
+CUDA runtime/cuDNN/cuBLAS는 전역 `/usr/local/cuda`가 아니라 `.venv` 내부에 설치된다.
+전체 CUDA 11.8 compiler toolkit은 `/home/ailab/git/sangbum/cuda-11.8`에 있으며 helper가
+`CUDA_HOME`, `PATH`, `LD_LIBRARY_PATH`를 설정한다. `nvcc --version`은 11.8.89다.
+runner 자체는 CUDA extension을 compile하지 않고 PyTorch wheel의 runtime을 사용한다.
 
 ## 필요한 checkpoint
 
@@ -104,19 +157,43 @@ checkpoint 이름만 신뢰하지 말고 원본 hash와 architecture를 확인�
 ```bash
 cd A1_RealCamera_A2_21FPS
 python3 scripts/verify_portable_bundle.py
-conda env create -f environment.yml
-conda activate a1-real-camera-a2
+source scripts/activate_nuvo_env.sh
 ```
 
-현재 runner는 OpenCV UVC 기반의 inference/timing prototype이다. 최종 `camera_aravis2 + ROS2` 입력 adapter는 아직 구현 전이므로, Ubuntu 실험 명령은 해당 adapter를 구현한 뒤 확정한다.
+## camera_aravis2 실행
 
-## 60초 1차 실험
+먼저 카메라를 연결하고 검색한다. 카메라가 한 대뿐이면 launch의 `guid`를 생략할 수 있다.
+
+```bash
+source scripts/activate_nuvo_env.sh
+arv-tool-0.8
+ros2 launch launch/hikrobot_a2_camera_1280x720.launch.py \
+  guid:=192.168.1.51 exposure_us:=15000
+```
+
+현재 검증된 launch는 1920×1200 센서의 중앙에서 `1280×720`, Offset `(320,240)`을
+hardware ROI로 받아 `BayerRG8 @ 21 FPS`로 전송한다. 별도 terminal에서 topic과 encoding을
+확인한다.
+
+```bash
+source scripts/activate_nuvo_env.sh
+ros2 topic list
+ros2 topic hz /camera_driver_gv/vis/image_raw
+ros2 topic echo /camera_driver_gv/vis/image_raw --once --field encoding
+```
+
+모델은 수신한 1280×720 전체를 화면에 표시하고 `y=235:485`의 1280×250 영역만 사용한다.
+software resize는 없다. 다만 중앙 hardware crop의 FOV와 학습 카메라 calibration이 같다는
+근거는 아직 없으므로 `geometry_valid_for_accuracy=false`다.
+
+## 60초 처리량 실험
 
 정확한 throughput 측정에서는 `--display`를 켜지 않는다.
 
 ```bash
 python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
+  --input ros2 \
+  --ros-topic /camera_driver_gv/vis/image_raw \
   --camera-fps 21 \
   --target-fps 21 \
   --width 1280 \
@@ -127,11 +204,13 @@ python scripts/live_camera_a2_21fps.py \
   --output-dir outputs/run01_fp32
 ```
 
-CUDA fp16 경로를 별도 비교할 때만 `--amp`를 추가한다.
+카메라 driver는 위의 1280×720 launch로 먼저 실행해야 한다. CUDA fp16 경로를 별도 비교할
+때만 `--amp`를 추가한다.
 
 ```bash
 python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
+  --input ros2 \
+  --ros-topic /camera_driver_gv/vis/image_raw \
   --seg-ckpt senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt \
   --a2-ckpt senior_code/data/ckpts/a2_mf20_v2s_n20.pt \
   --duration 60 \
@@ -143,10 +222,11 @@ python scripts/live_camera_a2_21fps.py \
 
 `summary.json`의 핵심 필드:
 
-- `capture_fps_host_observed`: OpenCV가 실제 전달한 FPS
+- `capture_fps_host_observed`: ROS subscriber callback에서 관측한 FPS
 - `a2_output_fps_steady`: history 1초가 채워진 뒤의 a₂ output FPS
 - `compute_ms.p95`: preprocessing+backbone+a₂ p95
 - `capture_to_a2_ms_host.p95`: host가 frame을 받은 시점부터 a₂ 완료까지
+- `capture_to_a2_ms_header.p95`: 동기화된 ROS header clock 기준 sensor timestamp부터 a₂까지
 - `capture_to_output_ms_host.p95`: a₂ decode와 중앙 lead 요약까지 완료된 시간
 - `stage_ms.backbone`, `stage_ms.a2`: 병목 분리
 - `stage_ms.a2_decode_and_summary`, `stage_ms.visualization`: 후처리와 화면 비용
@@ -156,24 +236,47 @@ python scripts/live_camera_a2_21fps.py \
 
 21 FPS의 frame budget은 `1000/21 = 47.62 ms`다.
 
+### 검증된 1280×720 hardware ROI 결과
+
+카메라 자체를 센서 중앙 `1280x720`, Offset `(320,240)`으로 설정한 60초 재실험 결과는
+`outputs/real_camera_1280x720_exp15000_fp32_60s/summary.json`에 저장되어 있다.
+
+- ROS image: 1280x720 BayerRG8 (software resize 없음)
+- capture / steady a₂: 20.999 / 20.998 FPS
+- compute p95: 15.214 ms
+- ROS header→a₂ p95: 26.383 ms
+- skipped/history-duplicate/NaN: 모두 0
+- sustained 21 FPS: PASS
+
+중앙 hardware crop은 학습 입력과 픽셀 shape은 같지만 FOV 동일성이 검증된 것은 아니므로
+여전히 `geometry_valid_for_accuracy=false`다.
+
+화면 녹화까지 포함한 25000 µs 결과와 두 최종 실험의 비교는
+[2026-09-14 실험 요약](RESULTS_2026-09-14.md)에 정리되어 있다.
+
 ## 정확도 확인용 화면
 
 ```bash
-python scripts/live_camera_a2_21fps.py \
-  --camera 0 \
-  --seg-ckpt senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt \
-  --a2-ckpt senior_code/data/ckpts/a2_mf20_v2s_n20.pt \
-  --duration 60 \
-  --display \
-  --log-full-a2 \
-  --output-dir outputs/run03_visual
+./run.sh live --exposure 2000
 ```
+
+노출은 화면에서 `[`와 `]`로 실시간 조절되고, 모델 band의 포화/암부 비율이 함께 표시된다.
+실내 모니터 재촬영을 재현하려면 그때 값을 그대로 준다.
+
+```bash
+./run.sh live --exposure 25000 --secs 60
+```
+
+`scripts/run_live_visualization.sh`는 2026-09-14 모니터 run을 그대로 재현하기 위해
+보존한 아카이브 스크립트다. 새 run에는 사용하지 않는다.
 
 화면 해석:
 
 - ROI의 빨간 반투명 세로 strip: `sigmoid(a₂[:,0])` object probability
 - `d=...m`: object-positive 연속 bin의 `a₂[:,6] × 40`
-- `vrel=...m/s`: 같은 bin들의 `a₂[:,3] × 20`
+- `vL=...`, `vT=...m/s`: 같은 bin들의 종/횡 상대속도(`a₂[:,3:5] × 20`)
+- 화면 상단 `PEAK ... RAW a2`: 선택된 bin의 원본 7채널. 다음 줄은 7채널을 확률·m/s·m로 변환한 값
+- `frames.jsonl`의 `a2_bins.raw_40x7`: 매 프레임 전체 40×7 원본값 (`./run.sh live` 기본 기록)
 - 빨간 왼쪽 화살표: 접근(`vL_rel < 0`), 파란 오른쪽 화살표: 이탈(`vL_rel > 0`)
 - 아래 노란 막대: `a₂[:,5]` proximity를 화면 표시용으로만 0~1 clamp
 - 노란 테두리 bin 16~25: 고정 중앙 관심영역이며 차선 인식 결과가 아님
@@ -195,6 +298,8 @@ overlay 영상까지 저장하려면 `--save-overlay-video`를 추가한다. 결
 `--allow-resize`는 throughput debugging에만 쓴다. resize하면 focal length, object size, horizon과 lateral bin 의미가 달라지므로 sim-to-real 정확도 결과는 무효다.
 
 ## 실험 문서
+
+실외 카트 시험 절차와 주의점은 [OUTDOOR_TEST_CHECKLIST_KR.md](docs/OUTDOOR_TEST_CHECKLIST_KR.md)에 있다.
 
 구체적인 단계, 통과 기준과 실물 촬영 시나리오는 [REAL_CAMERA_A2_21FPS_EXPERIMENT.md](docs/REAL_CAMERA_A2_21FPS_EXPERIMENT.md)에 정리했다.
 

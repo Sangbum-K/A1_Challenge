@@ -1,25 +1,17 @@
 """Physical-camera throughput test for the production 21-frame a2 path.
 
-This script intentionally stops at a2. It does not load f1/f2, ROS, MORAI, a
+This script intentionally stops at a2. It does not load f1/f2, MORAI, a
 raceline, or a pedal controller.
 
-TODO(Nuvo / final camera input):
-  현재 camera 입력부는 OpenCV UVC prototype이다. Nuvo PC에서 실제 실험하기 전에
-  camera_aravis2의 ROS2 sensor_msgs/Image(BayerRG8)를 구독하고,
-  BayerRG8 -> debayer -> RGB uint8 -> normalized RGB tensor 경로를 구현해야 한다.
-  가능하면 Hikrobot hardware ROI에서 1280x250을 직접 받아 resize를 피하되,
-  OffsetX/OffsetY와 FOV가 학습 카메라 입력과 맞는지 먼저 확인한다.
-  ROS2 subscriber는 오래된 frame이 쌓이지 않도록 queue depth 1/latest-frame 방식으로
-  구성하고, ROS header timestamp부터 a2 완료까지의 latency도 기록한다.
-
 Pipeline:
-  UVC camera -> BGR/RGB -> 250x1280 ROI -> ImageNet normalization
+  camera_aravis2/ROS2 BayerRG8 (or UVC prototype) -> debayer/BGR/RGB
+  -> 250x1280 ROI -> ImageNet normalization
   -> segmentation-pretrained EfficientNetV2-S last feature
   -> raw i1 token (40,C) -> timestamp history (current + 20 target ages)
   -> A2ModelMultiFrame.forward_tokens -> a2 logits (40,7)
 
 With --display, the exact a2 numbers are decoded into a diagnostic overlay:
-40 horizontal object-probability strips, distance and longitudinal relative
+40 horizontal object-probability strips, distance and both relative
 velocity annotations, proximity bars, and the fixed center-interest bins
 16..25.  These graphics are post-processing, not additional model outputs.
 
@@ -33,6 +25,8 @@ import hashlib
 import importlib.util
 import json
 import math
+import os
+import signal
 import sys
 import threading
 import time
@@ -62,6 +56,9 @@ sys.modules[_a2_spec.name] = _a2_module
 _a2_spec.loader.exec_module(_a2_module)
 A2ModelMultiFrame = _a2_module.A2ModelMultiFrame
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from camera_params import DynamicCameraParams, step_exposure  # noqa: E402
+
 
 EXPECTED_H = 720
 EXPECTED_W = 1280
@@ -76,12 +73,18 @@ A2_SCALE_DIST = 40.0
 CENTER_BIN0 = 16
 CENTER_BIN1 = 26  # exclusive; bins 16..25
 DISPLAY_PANEL_H = 190
-DISPLAY_WINDOW = "real camera + a2 (40-bin diagnostic)"
+DISPLAY_WINDOW = "raw camera 1280x720 + a2 diagnostics"
 
 
 def parse_args():
     ap = argparse.ArgumentParser(
-        description="실물 UVC 카메라 -> production mf20 a2의 21 FPS 가능성 측정")
+        description="실물 camera_aravis2/ROS2 카메라 -> production mf20 a2 21 FPS 측정")
+    ap.add_argument("--input", choices=["ros2", "uvc"], default="ros2",
+                    help="최종 실험은 ros2; uvc는 기존 prototype 확인용")
+    ap.add_argument("--ros-topic", default="/camera_driver_gv/vis/image_raw",
+                    help="camera_aravis2 sensor_msgs/Image topic")
+    ap.add_argument("--ros-node-name", default="live_camera_a2_21fps",
+                    help="ROS2 subscriber node name")
     ap.add_argument("--camera", type=int, default=0, help="OpenCV camera index")
     ap.add_argument("--camera-backend", choices=["auto", "avfoundation", "v4l2"], default="auto")
     ap.add_argument("--width", type=int, default=EXPECTED_W)
@@ -91,7 +94,8 @@ def parse_args():
     ap.add_argument("--target-fps", type=float, default=21.0,
                     help="pass/fail 기준 output FPS; 21 FPS budget=47.62 ms")
     ap.add_argument("--duration", type=float, default=60.0,
-                    help="model warm-up 뒤 측정 시간(초); 최종 thermal test는 300초 이상 권장")
+                    help="model warm-up 뒤 측정 시간(초). 0이면 q/Esc 또는 Ctrl-C까지 무제한; "
+                         "실차 주행 run처럼 길이를 미리 모를 때 사용")
     ap.add_argument("--seg-ckpt", required=True,
                     help="seg-pretrained backbone checkpoint")
     ap.add_argument("--a2-ckpt", required=True,
@@ -100,15 +104,34 @@ def parse_args():
     ap.add_argument("--device", default="auto", help="auto|cuda|mps|cpu")
     ap.add_argument("--amp", action="store_true", help="CUDA fp16 autocast")
     ap.add_argument("--warmup-iters", type=int, default=10)
+    ap.add_argument("--first-frame-timeout", type=float, default=5.0,
+                    help="첫 frame을 기다리는 시간(초). bag replay처럼 publisher가 "
+                         "model load보다 늦게 시작할 수 있으면 늘린다")
     ap.add_argument("--roi-y0", type=int, default=ROI_Y0)
     ap.add_argument("--roi-y1", type=int, default=ROI_Y1)
     ap.add_argument("--allow-resize", action="store_true",
                     help="camera가 요청 해상도를 주지 않을 때 resize. geometry가 달라져 정확도 평가는 무효")
+    ap.add_argument("--geometry-valid-for-accuracy", action="store_true",
+                    help="calibration/FOV/mount까지 검증된 경우만 명시. 단순 shape 일치는 불충분")
+    ap.add_argument("--geometry-note", default="uncalibrated physical-camera geometry; throughput only",
+                    help="summary.json에 기록할 geometry 근거/제약")
+    ap.add_argument("--ego-vx", type=float, default=0.0,
+                    help="A2ModelMultiFrame ego_motion[0] 종방향 속도 m/s. 카메라가 실제로 "
+                         "움직이는 주행 run에서 0을 주면 학습 조건과 어긋난다")
+    ap.add_argument("--ego-wz", type=float, default=0.0,
+                    help="A2ModelMultiFrame ego_motion[1] yaw rate rad/s")
     ap.add_argument("--obj-thr", type=float, default=0.5)
     ap.add_argument("--display-min-prob", type=float, default=0.10,
                     help="overlay에 희미하게 표시할 최소 object probability")
     ap.add_argument("--display", action="store_true",
                     help="실시간 RGB + a2 40-bin 진단 overlay")
+    ap.add_argument("--display-every", type=int, default=1,
+                    help="화면만 켠 경우 N번째 A2 출력마다 화면 갱신; 모델/로그는 매 frame 처리")
+    ap.add_argument("--tune-exposure", action="store_true",
+                    help="display 중 [ / ] 키로 카메라 노출을 실시간 조절하고 "
+                         "모델 band의 포화/암부 비율을 표시한다")
+    ap.add_argument("--driver-node", default="/camera_driver_gv",
+                    help="--tune-exposure가 파라미터를 설정할 camera driver node 이름")
     ap.add_argument("--save-overlay-video", action="store_true",
                     help="overlay를 output-dir/a2_overlay.mp4에 저장; throughput baseline에서는 끄기")
     ap.add_argument("--video-fps", type=float, default=0.0,
@@ -295,6 +318,7 @@ class LatestFrameCamera:
         if hasattr(cv2, "CAP_PROP_BUFFERSIZE"):
             self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self._negotiated = {
+            "transport": "OpenCV UVC prototype",
             "width": int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
             "height": int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
             "fps_reported": float(self.cap.get(cv2.CAP_PROP_FPS)),
@@ -328,7 +352,9 @@ class LatestFrameCamera:
                 break
             with self.condition:
                 self.seq += 1
-                self.latest = (self.seq, captured_at, frame)
+                # UVC has no sensor/header timestamp. Use the host capture-
+                # completion clock for both history selection and latency.
+                self.latest = (self.seq, captured_at, captured_at, frame)
                 self.capture_times.append(captured_at)
                 self.condition.notify_all()
 
@@ -356,6 +382,149 @@ class LatestFrameCamera:
             self.condition.notify_all()
         if self.thread is not None:
             self.thread.join(timeout=2.0)
+
+    @property
+    def timestamp_note(self):
+        return (
+            "OpenCV supplies a host capture-completion timestamp, not the sensor exposure "
+            "timestamp; true sensor-to-a2 latency requires the ROS2 camera path."
+        )
+
+
+class LatestROSFrame:
+    """Subscribe with sensor-data QoS and retain only the latest ROS image."""
+
+    def __init__(self, topic: str, node_name: str, expected_fps: float):
+        try:
+            import rclpy
+            from cv_bridge import CvBridge
+            from rclpy.executors import SingleThreadedExecutor
+            from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
+            from sensor_msgs.msg import Image
+        except ImportError as exc:
+            raise RuntimeError(
+                "ROS2 Python modules are unavailable. Source /opt/ros/humble/setup.bash "
+                "before activating the project .venv."
+            ) from exc
+
+        self._rclpy = rclpy
+        self._executor_type = SingleThreadedExecutor
+        self._bridge = CvBridge()
+        self._topic = topic
+        self._node_name = node_name
+        self._image_type = Image
+        self._qos = QoSProfile(
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+        )
+        self.condition = threading.Condition()
+        self.latest = None
+        self.seq = 0
+        self.running = False
+        self.error = None
+        self.capture_times = deque(maxlen=max(5000, int(expected_fps * 600)))
+        self.thread = None
+        self.node = None
+        self.executor = None
+        self.subscription = None
+        self._negotiated = {
+            "transport": "camera_aravis2/ROS2",
+            "topic": topic,
+            "qos": "sensor-data keep-last depth=1 best-effort",
+        }
+
+    @property
+    def negotiated(self):
+        return dict(self._negotiated)
+
+    @property
+    def timestamp_note(self):
+        return (
+            "History ages use the ROS header timestamp. capture_to_a2_ms_host starts at "
+            "subscriber callback arrival; capture_to_a2_ms_header uses the ROS header clock "
+            "and is meaningful only when camera/PTP and host clocks are synchronized."
+        )
+
+    def start(self):
+        if not self._rclpy.ok():
+            self._rclpy.init(args=None)
+        self.node = self._rclpy.create_node(self._node_name)
+        self.subscription = self.node.create_subscription(
+            self._image_type, self._topic, self._callback, self._qos)
+        self.executor = self._executor_type()
+        self.executor.add_node(self.node)
+        self.running = True
+        self.thread = threading.Thread(target=self._spin, name="ros2-image-subscription", daemon=True)
+        self.thread.start()
+
+    def _spin(self):
+        try:
+            while self.running and self._rclpy.ok():
+                self.executor.spin_once(timeout_sec=0.1)
+        except Exception as exc:  # surfaced to the inference thread
+            self.error = f"ROS2 executor failed: {exc}"
+            with self.condition:
+                self.condition.notify_all()
+
+    def _callback(self, msg):
+        host_received_at = time.perf_counter()
+        try:
+            frame = self._bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+            if frame.dtype != np.uint8 or frame.ndim != 3 or frame.shape[2] != 3:
+                raise RuntimeError(
+                    f"cv_bridge returned dtype={frame.dtype}, shape={frame.shape}; expected BGR8")
+            header_stamp = float(msg.header.stamp.sec) + float(msg.header.stamp.nanosec) * 1e-9
+            source_stamp = header_stamp if header_stamp > 0.0 else host_received_at
+        except Exception as exc:
+            self.error = f"cannot convert ROS image encoding={msg.encoding!r}: {exc}"
+            with self.condition:
+                self.condition.notify_all()
+            return
+        with self.condition:
+            self.seq += 1
+            self.latest = (self.seq, source_stamp, host_received_at, frame)
+            self.capture_times.append(host_received_at)
+            self._negotiated.update({
+                "width": int(msg.width),
+                "height": int(msg.height),
+                "encoding": str(msg.encoding),
+                "step": int(msg.step),
+                "frame_id": str(msg.header.frame_id),
+                "header_timestamp_available": header_stamp > 0.0,
+            })
+            self.condition.notify_all()
+
+    def get_after(self, seq: int, timeout: float = 2.0):
+        deadline = time.perf_counter() + timeout
+        with self.condition:
+            while self.running and not self.error and (self.latest is None or self.latest[0] <= seq):
+                remaining = deadline - time.perf_counter()
+                if remaining <= 0:
+                    return None
+                self.condition.wait(remaining)
+            if self.error or self.latest is None or self.latest[0] <= seq:
+                return None
+            return self.latest
+
+    def reset_measurement(self):
+        with self.condition:
+            self.capture_times.clear()
+            return self.latest[0] if self.latest is not None else 0
+
+    def stop(self):
+        self.running = False
+        with self.condition:
+            self.condition.notify_all()
+        if self.thread is not None:
+            self.thread.join(timeout=2.0)
+        if self.executor is not None and self.node is not None:
+            self.executor.remove_node(self.node)
+        if self.node is not None:
+            self.node.destroy_node()
+        if self._rclpy.ok():
+            self._rclpy.shutdown()
 
 
 def select_history(history, current_time: float):
@@ -457,6 +626,7 @@ def summarize_group(decoded, start: int, stop: int):
         "object_probability": float(decoded["object_probability"][peak_bin]),
         "distance_m": weighted("distance_m"),
         "v_long_rel_mps": weighted("v_long_rel_mps"),
+        "v_lat_rel_mps": weighted("v_lat_rel_mps"),
         "proximity": weighted("proximity"),
     }
 
@@ -491,6 +661,7 @@ def a2_summary(decoded, obj_thr: float):
             "object_probability": chosen["object_probability"],
             "distance_m": chosen["distance_m"],
             "v_long_rel_mps": chosen["v_long_rel_mps"],
+            "v_lat_rel_mps": chosen["v_lat_rel_mps"],
             "proximity": chosen["proximity"],
         }
     center_max = float(np.max(decoded["object_probability"][CENTER_BIN0:CENTER_BIN1]))
@@ -501,6 +672,7 @@ def a2_summary(decoded, obj_thr: float):
         "object_probability": center_max,
         "distance_m": None,
         "v_long_rel_mps": None,
+        "v_lat_rel_mps": None,
         "proximity": None,
     }
 
@@ -533,31 +705,42 @@ def _draw_vrel_arrow(image, center, value):
     cv2.arrowedLine(image, start, end, color, 3, cv2.LINE_AA, tipLength=0.35)
 
 
-def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: float):
-    """Render model-aligned diagnostics; this function does not alter inference."""
+def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: float,
+                      status_text: str = None):
+    """Render diagnostics over the full, unresized camera frame.
+
+    The green outline is the actual model crop.  Red tint represents only the
+    lateral A2 bins and must not be interpreted as a 2-D detection box.
+    """
     shown = frame_bgr.copy()
     height, width = shown.shape[:2]
     roi_y0, roi_y1 = args.roi_y0, args.roi_y1
     prob = decoded["object_probability"]
 
     # A2 retained only lateral location, so each probability is drawn as a
-    # vertical strip across the model ROI rather than as a fake 2-D box/mask.
+    # light vertical strip across the model ROI rather than as a fake 2-D box.
+    # Keeping the tint light preserves the appearance of the received frame.
     for index, value in enumerate(prob):
         if value < args.display_min_prob:
             continue
         x0, x1 = _bin_x(index, width), _bin_x(index + 1, width)
-        alpha = min(0.55, 0.06 + 0.49 * float(value))
+        alpha = min(0.32, 0.04 + 0.28 * float(value))
         region = shown[roi_y0:roi_y1, x0:x1]
         red = np.zeros_like(region)
         red[:, :, 2] = 255
         cv2.addWeighted(red, alpha, region, 1.0 - alpha, 0.0, dst=region)
 
-    for index in range(N_BINS + 1):
-        x = _bin_x(index, width)
-        color = (105, 105, 105) if index % 5 else (180, 180, 180)
-        cv2.line(shown, (x, roi_y0), (x, roi_y1), color, 1, cv2.LINE_AA)
-    cv2.rectangle(shown, (_bin_x(CENTER_BIN0, width), roi_y0),
-                  (_bin_x(CENTER_BIN1, width) - 1, roi_y1 - 1), (0, 255, 255), 3)
+    # The whole received 1280x720 frame stays visible.  Only this full-width
+    # 1280x250 region is cropped and normalized for the backbone.
+    cv2.rectangle(shown, (0, roi_y0), (width - 1, roi_y1 - 1), (0, 255, 0), 2)
+    _put_text_box(
+        shown,
+        f"MODEL INPUT CROP x=0:{width}, y={roi_y0}:{roi_y1} "
+        f"({width}x{roi_y1 - roi_y0})",
+        (12, roi_y0 - 8),
+        color=(80, 255, 80),
+        scale=0.52,
+    )
 
     # One label per contiguous object-positive group avoids printing 5-10
     # duplicate distance values on a single wide vehicle.
@@ -570,10 +753,13 @@ def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: 
         label_y = roi_y0 + 25 + (row % 3) * 30
         distance = obj["distance_m"]
         vrel = obj["v_long_rel_mps"]
+        vlat = obj["v_lat_rel_mps"]
         distance_text = "d=?" if distance is None else f"d={distance:.1f}m"
-        vrel_text = "vrel=?" if vrel is None else f"vrel={vrel:+.1f}m/s"
-        _put_text_box(shown, f"b{peak} p={obj['object_probability']:.2f} {distance_text} {vrel_text}",
-                      (x - 80, label_y), color=(255, 255, 255), scale=0.46)
+        vrel_text = "vL=?" if vrel is None else f"vL={vrel:+.1f}"
+        vlat_text = "vT=?" if vlat is None else f"vT={vlat:+.1f}"
+        _put_text_box(shown, f"b{peak} p={obj['object_probability']:.2f} {distance_text} "
+                      f"{vrel_text} {vlat_text}m/s",
+                      (x - 110, label_y), color=(255, 255, 255), scale=0.46)
         cv2.line(shown, (x, label_y + 7), (x, roi_y1 - 8), (255, 255, 255), 1, cv2.LINE_AA)
         _draw_vrel_arrow(shown, (x, min(roi_y1 - 15, label_y + 20)), vrel)
 
@@ -582,14 +768,34 @@ def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: 
     steady = record["history_span_s"] >= PREV_AGES_S[-1]
     state = "READY 21/21" if steady else f"HISTORY WARMUP {record['history_span_s']:.2f}/1.00s"
     top_lines = [
+        f"RAW CAMERA INPUT {width}x{height} | full frame shown | software resize: "
+        f"{'YES' if record['resized'] else 'NO'}",
         f"A2 output {fps_recent:5.1f} FPS | model compute {record['compute_ms']:5.1f} ms | "
         f"capture->A2 {record['capture_to_a2_ms_host']:5.1f} ms",
         f"{state} | unique past {record['history_unique_sources']:02d}/20 | "
         f"skipped total {record['skipped_total']} | obj threshold {args.obj_thr:.2f}",
     ]
+    if status_text:
+        top_lines.append(status_text)
+    # Show the selected peak bin's seven model channels without group averaging.
+    # All 40 bins are saved separately when --log-full-a2 is enabled.
+    peak = record["a2"].get("bin")
+    if peak is not None:
+        raw = decoded["raw"][peak]
+        top_lines.append(
+            f"PEAK b{peak:02d} RAW a2 [obj,Labs,Tabs,Lrel,Trel,prox,dist] = "
+            + ",".join(f"{float(value):+.2f}" for value in raw))
+        top_lines.append(
+            f"DECODED b{peak:02d} p={decoded['object_probability'][peak]:.2f} "
+            f"abs(L,T)=({decoded['v_long_abs_mps'][peak]:+.1f},"
+            f"{decoded['v_lat_abs_mps'][peak]:+.1f}) "
+            f"rel(L,T)=({decoded['v_long_rel_mps'][peak]:+.1f},"
+            f"{decoded['v_lat_rel_mps'][peak]:+.1f})m/s "
+            f"prox={decoded['proximity'][peak]:.2f} "
+            f"d={decoded['distance_m'][peak]:.1f}m")
     for line_index, line in enumerate(top_lines):
         _put_text_box(shown, line, (15, 28 + line_index * 28),
-                      color=(80, 255, 80) if line_index == 0 else (255, 255, 255), scale=0.56)
+                      color=(80, 255, 80) if line_index <= 1 else (255, 255, 255), scale=0.56)
 
     panel = np.full((DISPLAY_PANEL_H, width, 3), 20, dtype=np.uint8)
     cell_y0, cell_y1 = 34, 70
@@ -613,9 +819,33 @@ def render_a2_overlay(frame_bgr: np.ndarray, decoded, record, args, fps_recent: 
         cv2.rectangle(panel, (x0 + 2, y), (max(x0 + 2, x1 - 2), bar_base), (40, 210, 210), -1)
     cv2.putText(panel, "PROXIMITY (a2[:,5], display-clamped 0..1)", (12, 99),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.48, (210, 210, 210), 1, cv2.LINE_AA)
-    cv2.putText(panel, "yellow = fixed center bins 16..25 (NOT lane detection) | red left: approaching | blue right: receding",
-                (12, 186), cv2.FONT_HERSHEY_SIMPLEX, 0.46, (190, 190, 190), 1, cv2.LINE_AA)
+    cv2.putText(
+        panel,
+        "yellow outline = lead-search bins 16..25 (not crop/box/lane) | red left: approaching | blue right: receding",
+        (12, 186), cv2.FONT_HERSHEY_SIMPLEX, 0.43, (190, 190, 190), 1, cv2.LINE_AA)
     return np.vstack((shown, panel))
+
+
+def band_clipping(frame_bgr: np.ndarray, y0: int, y1: int):
+    """How much of the band the model sees is blown out or crushed.
+
+    Outdoors this is the difference between a working run and 40 bins of
+    white, and it is not obvious on a laptop screen in sunlight.
+    """
+    gray = cv2.cvtColor(frame_bgr[y0:y1], cv2.COLOR_BGR2GRAY)
+    total = max(1, gray.size)
+    return (100.0 * float((gray >= 250).sum()) / total,
+            100.0 * float((gray <= 5).sum()) / total)
+
+
+def ego_motion_tensor(args, device, dtype=torch.float32):
+    """A2ModelMultiFrame ego_motion (1,2) = [vx, wz].
+
+    The fusion block feeds this through ego_proj into the cross-attention KV
+    set, so it is a real model input, not a placeholder.  A static camera is
+    correctly described by zeros; a camera on a moving vehicle is not.
+    """
+    return torch.tensor([[args.ego_vx, args.ego_wz]], dtype=dtype, device=device)
 
 
 def warmup(frame, args, device, backbone, a2):
@@ -625,7 +855,7 @@ def warmup(frame, args, device, backbone, a2):
         with torch.inference_mode(), autocast_context(device, amp_enabled):
             feature = backbone(image)[-1]
             token = F.adaptive_avg_pool2d(feature, (1, N_BINS)).squeeze(2).transpose(1, 2)
-            a2.forward_tokens([token] * 21, torch.zeros(1, 2, device=device))
+            a2.forward_tokens([token] * 21, ego_motion_tensor(args, device, token.dtype))
     sync_device(device)
 
 
@@ -640,6 +870,10 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
     capture_fps = (len(cap_times) - 1) / cap_elapsed if cap_elapsed > 0 else 0.0
     compute = [r["compute_ms"] for r in basis]
     capture_to_a2 = [r["capture_to_a2_ms_host"] for r in basis]
+    capture_to_a2_header = [
+        r["capture_to_a2_ms_header"] for r in basis
+        if r["capture_to_a2_ms_header"] is not None
+    ]
     capture_to_output = [r["capture_to_output_ms_host"] for r in basis]
     preprocess = [r["preprocess_ms"] for r in basis]
     backbone = [r["backbone_ms"] for r in basis]
@@ -688,7 +922,18 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
         "seg_checkpoint_sha256": model_info["seg_checkpoint_sha256"],
         "a2_checkpoint_sha256": model_info["a2_checkpoint_sha256"],
         "target_fps": args.target_fps,
+        "object_threshold": args.obj_thr,
         "frame_budget_ms": budget_ms,
+        "roi_y": [args.roi_y0, args.roi_y1],
+        "ego_motion_input": {
+            "vx_mps": args.ego_vx,
+            "wz_radps": args.ego_wz,
+            "note": (
+                "ego_motion is a real A2ModelMultiFrame input. Zeros are only correct "
+                "for a stationary camera; a moving-vehicle run with zeros is a "
+                "train/deploy mismatch on the velocity channels."
+            ),
+        },
         "camera": camera.negotiated,
         "device": str(model_info["device"]),
         "amp": bool(args.amp and model_info["device"].type == "cuda"),
@@ -699,6 +944,7 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
         "capture_fps_host_observed": capture_fps,
         "a2_output_fps_steady": output_fps,
         "capture_to_a2_ms_host": latency_stats(capture_to_a2),
+        "capture_to_a2_ms_header": latency_stats(capture_to_a2_header),
         "capture_to_output_ms_host": latency_stats(capture_to_output),
         "compute_ms": latency_stats(compute),
         "stage_ms": {
@@ -720,9 +966,12 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
         "history_duplicate_slot_ratio": duplicate_ratio,
         "nan_or_inf_frames": nan_frames,
         "resized_any_frame": resized_any,
-        "geometry_valid_for_accuracy": not resized_any,
+        "geometry_valid_for_accuracy": bool(
+            args.geometry_valid_for_accuracy and not resized_any),
+        "geometry_note": args.geometry_note,
         "visualization": {
             "display_enabled": bool(args.display),
+            "display_every": args.display_every,
             "video_enabled": bool(args.save_overlay_video),
             "full_a2_log_enabled": bool(args.log_full_a2),
             "timing_note": (
@@ -737,9 +986,7 @@ def summarize(records, camera, args, model_info, resized_any, nan_frames):
             "sustained_a2_21fps": end_to_end_pass,
         },
         "likely_bottleneck": bottleneck,
-        "timestamp_note": (
-            "OpenCV supplies a host capture-completion timestamp, not the sensor exposure timestamp; "
-            "true sensor-to-a2 latency needs a camera SDK or hardware timestamp."),
+        "timestamp_note": camera.timestamp_note,
     }
 
 
@@ -749,8 +996,21 @@ def main():
         raise ValueError("--obj-thr must be in [0,1]")
     if not 0.0 <= args.display_min_prob <= 1.0:
         raise ValueError("--display-min-prob must be in [0,1]")
-    if args.target_fps <= 0.0 or args.camera_fps <= 0.0 or args.duration <= 0.0:
-        raise ValueError("FPS and duration arguments must be positive")
+    if args.target_fps <= 0.0 or args.camera_fps <= 0.0:
+        raise ValueError("FPS arguments must be positive")
+    if args.duration < 0.0:
+        raise ValueError("--duration must be >= 0 (0 means run until q/Esc or Ctrl-C)")
+    if args.display_every < 1:
+        raise ValueError("--display-every must be >= 1")
+    duration = args.duration if args.duration > 0.0 else math.inf
+    if args.roi_y1 - args.roi_y0 != ROI_Y1 - ROI_Y0:
+        print(f"[warn] ROI height {args.roi_y1 - args.roi_y0} != trained {ROI_Y1 - ROI_Y0}; "
+              "object scale and lateral-bin geometry no longer match training",
+              flush=True)
+    if args.display and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        print("[warn] no DISPLAY/WAYLAND_DISPLAY; disabling --display. "
+              "Add --save-overlay-video to keep a visual record.", flush=True)
+        args.display = False
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     device = resolve_device(args.device)
@@ -765,8 +1025,11 @@ def main():
         for parameter in module.parameters():
             parameter.requires_grad_(False)
 
-    camera = LatestFrameCamera(
-        args.camera, args.camera_backend, args.width, args.height, args.camera_fps)
+    if args.input == "ros2":
+        camera = LatestROSFrame(args.ros_topic, args.ros_node_name, args.camera_fps)
+    else:
+        camera = LatestFrameCamera(
+            args.camera, args.camera_backend, args.width, args.height, args.camera_fps)
     print(f"[camera] negotiated={camera.negotiated}", flush=True)
     print(f"[model] device={device} seg={seg_load} a2={a2_load}", flush=True)
     camera.start()
@@ -781,26 +1044,49 @@ def main():
     video_writer = None
     skipped_total = 0
     contract_validated = False
+    stop_requested = threading.Event()
 
+    def request_stop(signum, frame):
+        stop_requested.set()
+
+    signal.signal(signal.SIGTERM, request_stop)
     try:
-        first = camera.get_after(last_seq, timeout=5.0)
+        if args.first_frame_timeout > 5.0:
+            print(f"[wait] first frame, up to {args.first_frame_timeout:.0f}s", flush=True)
+        first = camera.get_after(last_seq, timeout=args.first_frame_timeout)
         if first is None:
-            raise RuntimeError(camera.error or "no camera frame received within 5 seconds")
-        last_seq, _, first_frame = first
+            raise RuntimeError(
+                camera.error
+                or f"no camera frame received within {args.first_frame_timeout:.0f} seconds")
+        last_seq, _, _, first_frame = first
         print(f"[warmup] iterations={args.warmup_iters}", flush=True)
         warmup(first_frame, args, device, backbone, a2)
         last_seq = camera.reset_measurement()
         first_processed_at = time.perf_counter()
         amp_enabled = args.amp and device.type == "cuda"
+        # ego_motion is constant for a run, so build it once instead of
+        # re-uploading a (1,2) tensor on every frame.
+        ego_input = ego_motion_tensor(args, device)
+        camera_params = None
+        exposure_us = None
+        exposure_msg = ""
+        if args.display and args.tune_exposure:
+            camera_params = DynamicCameraParams(args.driver_node)
+            print(f"[params] {camera_params.summary}", flush=True)
+            if camera_params.supports("ExposureTime"):
+                exposure_us = camera_params.get("ExposureTime")
+                exposure_msg = "[ / ] exposure"
+            else:
+                exposure_msg = "exposure not tunable; set --exposure at launch"
 
         with frames_path.open("w", encoding="utf-8") as frame_log:
-            while time.perf_counter() - first_processed_at < args.duration:
+            while not stop_requested.is_set() and time.perf_counter() - first_processed_at < duration:
                 item = camera.get_after(last_seq, timeout=2.0)
                 if item is None:
                     if camera.error:
                         raise RuntimeError(camera.error)
                     continue
-                seq, captured_at, frame = item
+                seq, source_stamp, host_received_at, frame = item
                 skipped = max(0, seq - last_seq - 1)
                 last_seq = seq
                 started = time.perf_counter()
@@ -817,14 +1103,14 @@ def main():
                 sync_device(device)
                 backbone_done = time.perf_counter()
 
-                history.append((seq, captured_at, token[0].detach()))
-                past, age_errors_ms, source_seqs = select_history(history, captured_at)
+                history.append((seq, source_stamp, token[0].detach()))
+                past, age_errors_ms, source_seqs = select_history(history, source_stamp)
                 token_list = [token] + past
-                ego_zero = torch.zeros(1, 2, dtype=token.dtype, device=device)
                 with torch.inference_mode(), autocast_context(device, amp_enabled):
-                    logits = a2.forward_tokens(token_list, ego_zero)
+                    logits = a2.forward_tokens(token_list, ego_input)
                 sync_device(device)
                 a2_done = time.perf_counter()
+                a2_done_wall = time.time()
 
                 finite = bool(torch.isfinite(logits).all())
                 if not finite:
@@ -843,14 +1129,18 @@ def main():
                     "error": "a2 output contains NaN or Inf",
                 }
                 completed = time.perf_counter()
-                history_span = captured_at - history[0][1]
+                history_span = source_stamp - history[0][1]
+                header_available = bool(camera.negotiated.get("header_timestamp_available", False))
                 skipped_total += skipped
                 record = {
                     "seq": seq,
-                    "captured_at": captured_at,
+                    "source_timestamp": source_stamp,
+                    "host_received_at": host_received_at,
                     "completed_at": completed,
-                    "capture_to_a2_ms_host": (a2_done - captured_at) * 1000.0,
-                    "capture_to_output_ms_host": (completed - captured_at) * 1000.0,
+                    "capture_to_a2_ms_host": (a2_done - host_received_at) * 1000.0,
+                    "capture_to_a2_ms_header": (
+                        (a2_done_wall - source_stamp) * 1000.0 if header_available else None),
+                    "capture_to_output_ms_host": (completed - host_received_at) * 1000.0,
                     "preprocess_ms": (preprocessed - started) * 1000.0,
                     "backbone_ms": (backbone_done - preprocessed) * 1000.0,
                     "a2_ms": (a2_done - backbone_done) * 1000.0,
@@ -872,12 +1162,19 @@ def main():
                         "raw_40x7": decoded["raw"].tolist(),
                         "object_probability": decoded["object_probability"].tolist(),
                         "distance_m": decoded["distance_m"].tolist(),
+                        "v_long_abs_mps": decoded["v_long_abs_mps"].tolist(),
+                        "v_lat_abs_mps": decoded["v_lat_abs_mps"].tolist(),
                         "v_long_rel_mps": decoded["v_long_rel_mps"].tolist(),
+                        "v_lat_rel_mps": decoded["v_lat_rel_mps"].tolist(),
                         "proximity": decoded["proximity"].tolist(),
                     }
 
                 quit_requested = False
-                if args.display or args.save_overlay_video:
+                # A slower diagnostic display can preserve model throughput on
+                # the RT boot. Video still renders every frame when enabled.
+                render_this_frame = args.save_overlay_video or (
+                    args.display and len(records) % args.display_every == 0)
+                if render_this_frame:
                     visual_started = time.perf_counter()
                     recent_completion = [r["completed_at"] for r in records[-20:]] + [completed]
                     if len(recent_completion) >= 2:
@@ -886,7 +1183,22 @@ def main():
                                       if recent_elapsed > 0.0 else 0.0)
                     else:
                         fps_recent = 0.0
-                    overlay = render_a2_overlay(model_frame, decoded, record, args, fps_recent)
+                    status_text = None
+                    if args.display:
+                        clipped, crushed = band_clipping(
+                            model_frame, args.roi_y0, args.roi_y1)
+                        exposure_part = (f"exposure {exposure_us:.0f} us"
+                                         if exposure_us is not None else "exposure fixed")
+                        warning = ""
+                        if clipped > 5.0:
+                            warning = "  << OVEREXPOSED"
+                        elif crushed > 20.0:
+                            warning = "  << UNDEREXPOSED"
+                        status_text = (
+                            f"{exposure_part} | band clipped {clipped:4.1f}% "
+                            f"crushed {crushed:4.1f}% | {exposure_msg}{warning}")
+                    overlay = render_a2_overlay(
+                        model_frame, decoded, record, args, fps_recent, status_text)
                     if args.save_overlay_video:
                         if video_writer is None:
                             video_fps = args.video_fps if args.video_fps > 0.0 else args.camera_fps
@@ -900,7 +1212,12 @@ def main():
                         video_writer.write(overlay)
                     if args.display:
                         cv2.imshow(DISPLAY_WINDOW, overlay)
-                        quit_requested = cv2.waitKey(1) & 0xFF in (27, ord("q"))
+                        key = cv2.waitKey(1) & 0xFF
+                        quit_requested = key in (27, ord("q"))
+                        if key in (ord("["), ord("]")) and exposure_us is not None:
+                            exposure_us = step_exposure(
+                                exposure_us, 1 if key == ord("]") else -1)
+                            camera_params.set_async("ExposureTime", exposure_us)
                     record["visualization_ms"] = (time.perf_counter() - visual_started) * 1000.0
 
                 records.append(record)
@@ -912,9 +1229,9 @@ def main():
     except KeyboardInterrupt:
         print("[stop] interrupted", flush=True)
     finally:
-        camera.stop()
         if video_writer is not None:
             video_writer.release()
+        camera.stop()
         if args.display:
             cv2.destroyAllWindows()
 
