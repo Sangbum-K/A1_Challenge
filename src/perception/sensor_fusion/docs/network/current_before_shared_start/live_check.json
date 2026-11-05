@@ -1,0 +1,12 @@
+{
+  "seconds": 8.04436611500023,
+  "counts": {
+    "cloud": 80,
+    "association": 79
+  },
+  "last": {
+    "primary": -1,
+    "status": "no_image",
+    "processing_ms": 50.332214
+  }
+}

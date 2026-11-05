@@ -1,0 +1,11 @@
+{
+  "mode": "track",
+  "out": "A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs/lidar_lead_audit_20261008_0426_sparse",
+  "start": 266.0,
+  "end": 921.0,
+  "seed_x": 29.0,
+  "seed_y": -3.0,
+  "coast": 2.0,
+  "dense": false,
+  "tag": ""
+}

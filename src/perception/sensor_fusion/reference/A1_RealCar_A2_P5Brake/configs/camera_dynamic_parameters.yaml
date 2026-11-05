@@ -1,0 +1,15 @@
+- FeatureName: ExposureTime
+  Type: float
+  Min: 15.0
+  Max: 1000000.0
+  Description: Exposure time in microseconds; ExposureAuto is Off.
+- FeatureName: Gain
+  Type: float
+  Min: 0.0
+  Max: 23.9
+  Description: Analog gain in dB; MV-CS023-10GC measured maximum is 23.98 dB.
+- FeatureName: AcquisitionFrameRate
+  Type: float
+  Min: 1.0
+  Max: 200.0
+  Description: Acquisition rate in Hz; AcquisitionFrameRateEnable is True.

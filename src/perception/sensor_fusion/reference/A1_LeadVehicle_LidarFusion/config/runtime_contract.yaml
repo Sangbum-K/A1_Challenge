@@ -1,0 +1,19 @@
+# Design contract only; no ROS launch currently consumes this file.
+namespace: /lead_fusion
+fusion_hz: 10
+camera_optional: true
+camera_association_enabled: false
+publish_shared_tf: false
+start_sensor_drivers: false
+send_vehicle_commands: false
+backend_proposed: autoware_centerpoint_and_multi_object_tracker
+backend_installed: false
+lidar_to_vehicle: null
+lidar_to_camera: null
+camera_intrinsics: null
+ego_velocity_contract_verified: false
+time_alignment_verified: false
+vehicle_bumper_offsets: null
+control_gap_definition: path_longitudinal_bumper_gap
+invalid_request_value: null
+allow_coasting_control: false

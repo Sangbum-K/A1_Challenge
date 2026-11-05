@@ -1,0 +1,9 @@
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+PASS: one publisher, three increasing-stamp hesai_lidar clouds received
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+Multiple source publishers; refusing mixed LiDAR input
+Read-only LiDAR bridge: domain 115 /lidar_points -> domain 116 /lead_fusion/input/lidar_points; no driver ownership
+No verified LiDAR stream: start the localization/shared driver first. Publishers=0, valid clouds=0
+distinct domains and an absolute source topic required
+PASS: byte/stamp preservation, one-way forwarding, check-only, external-owner survival, duplicate/missing-source rejection, loop rejection

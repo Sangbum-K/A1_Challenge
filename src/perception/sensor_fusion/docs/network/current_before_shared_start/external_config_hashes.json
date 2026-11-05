@@ -1,0 +1,10 @@
+[
+  {
+    "path": "/home/ailab/.ros/a1_localization/pandarxt_runtime.yaml",
+    "sha256": "6cbfe9f868242b699cad853c104357576b6233176271e9b445459fc899b78858"
+  },
+  {
+    "path": "/home/ailab/git/A1_localization/src/a1/a1_gnss_bringup/config/gsof_client.yaml",
+    "sha256": "c4388307da6c49f9b3ad2d9deca329c63b7214194569b63affb968ed50e31b00"
+  }
+]

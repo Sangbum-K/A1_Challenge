@@ -1,0 +1,10 @@
+/build/
+/install/
+/driver_install/
+/log/
+/outputs/
+**/__pycache__/
+**/.pytest_cache/
+/build_gpu/
+/install_gpu/
+/vendor/

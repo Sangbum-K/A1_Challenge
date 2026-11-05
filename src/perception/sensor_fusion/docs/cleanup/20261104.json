@@ -1,0 +1,32 @@
+{
+  "actions": [
+    {
+      "path": "reference/A1_RealCar_A2_P5Brake/outputs",
+      "original": "/home/ailab/git/sangbum/A1_Challenge-main/A1_RealCar_A2_P5Brake/outputs",
+      "bytes": 35265731189,
+      "files": 171,
+      "action": "SHA256 verified; duplicate replaced by relative symlink"
+    },
+    {
+      "path": "datasets/a1_map_20261008_111019",
+      "original": "/home/ailab/.ros/a1_localization/bags/a1_map_20261008_111019",
+      "bytes": 30827326682,
+      "files": 2,
+      "action": "SHA256 verified; duplicate replaced by relative symlink"
+    },
+    {
+      "path": "reference/lidar_visualization_20261008_111019",
+      "original": "/home/ailab/git/sangbum/lidar_visualization_20261008_111019",
+      "bytes": 481613056,
+      "files": 17,
+      "action": "SHA256 verified; duplicate replaced by relative symlink"
+    },
+    {
+      "path": "/home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/vendor/libtorch-cu118.zip",
+      "bytes": 2639664839,
+      "action": "removed extracted installer ZIP"
+    }
+  ],
+  "removed_bytes": 69214335766,
+  "finished": "2026-11-04 09:26:49"
+}

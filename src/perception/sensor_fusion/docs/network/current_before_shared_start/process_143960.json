@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/home/ailab/git/A1_localization/install/hesai_ros_driver/lib/hesai_ros_driver/hesai_ros_driver_node",
+    "--ros-args",
+    "--params-file",
+    "/tmp/launch_params_myssfbe3",
+    ""
+  ],
+  "ros_environment": {
+    "ROS_DOMAIN_ID": "0",
+    "ROS_LOCALHOST_ONLY": "0"
+  }
+}

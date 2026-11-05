@@ -1,0 +1,39 @@
+[INFO] [launch]: All log files can be found below /home/ailab/.ros/log/2026-09-14-15-06-14-446893-ubuntu22-18325
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [camera_driver_gv-1]: process started with pid [18330]
+[camera_driver_gv-1] [0m[INFO] [1789365975.516074710] [camera_driver_gv]: Attached cameras (Num. Interfaces: 3 | Num. Devices: 1):[0m
+[camera_driver_gv-1] [0m[INFO] [1789365975.516196144] [camera_driver_gv]:   Device 0: Hikrobot-MV-CS023-10GC-DA8931779 (192.168.1.51)[0m
+[camera_driver_gv-1] [0m[INFO] [1789365975.516213615] [camera_driver_gv]: Opening: 192.168.1.51 [0m
+[camera_driver_gv-1] [0m[INFO] [1789365975.706555443] [camera_driver_gv]: Number of supported stream channels: 1[0m
+[camera_driver_gv-1] [0m[INFO] [1789365975.711544261] [camera_driver_gv]: camera calibration URL: file:///home/ailab/git/sangbum/A1_Challenge-main/A1_RealCamera_A2_21FPS/configs/camera_info_1280x720_uncalibrated.yaml[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273536049] [camera_driver_gv]: ======================================[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273579649] [camera_driver_gv]: Camera Configuration:[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273584379] [camera_driver_gv]: --------------------------------------[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273587071] [camera_driver_gv]:   GUID:                  Hikrobot-MV-CS023-10GC-DA8931779[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273595270] [camera_driver_gv]:   GEV Packet Size (B):   1500[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273600021] [camera_driver_gv]:   - - - - - - - - - - - - - - - - - - [0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273603140] [camera_driver_gv]:   Stream 0:              vis[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273606367] [camera_driver_gv]:     Sensor Size:         1920x1200[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273609591] [camera_driver_gv]:     Pixel Format:        BayerRG8[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273613641] [camera_driver_gv]:     Binning X,Y:         1,1[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273616358] [camera_driver_gv]:     Binning Mode X,Y:    n/a,n/a[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273619741] [camera_driver_gv]:     Image Offset X,Y:    320,240[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273622790] [camera_driver_gv]:     Image Size:          1280x720[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273625749] [camera_driver_gv]:     Acquisition Mode:    Continuous[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273629312] [camera_driver_gv]:     Exposure Mode:       Timed[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273632449] [camera_driver_gv]:     Exposure Auto:       Off[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273635550] [camera_driver_gv]:     Exposure Time (us):  25000.000000[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273640638] [camera_driver_gv]:     Frame Rate Enable:   True[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273643518] [camera_driver_gv]:     Frame Rate (Hz):     21.000000[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273647560] [camera_driver_gv]:     Gain Auto:           Off[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273653063] [camera_driver_gv]:     Balance White Auto:  Off[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273656649] [camera_driver_gv]: ======================================[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.273782722] [camera_driver_gv]: Spawning camera stream with ID 0 (vis)[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.300811869] [camera_driver_gv]: Allocated 10 image buffers of size 921600[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.300926409] [camera_driver_gv]: Started processing thread for stream 0 (vis)[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.303871166] [camera_driver_gv]: Done initializing.[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.303907406] [camera_driver_gv]:   Camera:        Hikrobot-MV-CS023-10GC-DA8931779[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.304136168] [camera_driver_gv]:   IP:            192.168.1.51[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.304140351] [camera_driver_gv]:   Num. Streams:  (1 / 1)[0m
+[camera_driver_gv-1] [0m[INFO] [1789365976.304143643] [camera_driver_gv]: |-> Acquisition start at initialization.[0m
+[camera_driver_gv-1] [33m[WARN] [1789365976.340648625] [camera_driver_gv]: Image region specified for stream 0 (vis) doesn't match received. Setting region to: x=0 y=0 width= 1280 height=720.[0m

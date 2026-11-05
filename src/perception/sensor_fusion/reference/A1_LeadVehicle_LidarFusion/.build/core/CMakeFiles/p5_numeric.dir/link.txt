@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/p5_numeric.dir/p5_numeric.cpp.o -o p5_numeric 

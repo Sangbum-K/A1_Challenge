@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.venv/
+wandb/
+outputs/*
+!outputs/.gitkeep
+data/local/*
+!data/local/.gitkeep
+data/ckpts/*
+!data/ckpts/.gitkeep
+*.npz
+*.pt
+*.pth
+
+# These two exact senior checkpoints are part of the portable experiment bundle.
+!senior_code/data/ckpts/seg_pretrain_fx640_v3_backbone.pt
+!senior_code/data/ckpts/a2_mf20_v2s_n20.pt

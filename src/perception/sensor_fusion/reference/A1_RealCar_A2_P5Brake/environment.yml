@@ -1,0 +1,14 @@
+name: a1-real-camera-a2
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pytorch=2.4.*
+  - torchvision=0.19.*
+  - numpy
+  - opencv
+  - pip:
+      - timm>=1.0

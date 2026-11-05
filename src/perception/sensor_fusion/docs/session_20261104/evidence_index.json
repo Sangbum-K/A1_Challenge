@@ -1,0 +1,653 @@
+{
+  "date_kst": "2026-11-04",
+  "active_run": "outputs/ui_20261104_101515",
+  "note": "Originals retained. Active logs/recordings continue growing; index is a point-in-time snapshot. No large data copies.",
+  "files": [
+    {
+      "path": "outputs/diagnosis_20261104_1000/FINDINGS_KR.md",
+      "bytes_at_index": 1321
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/camera.jpg",
+      "bytes_at_index": 200051
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/cloud_sample.npz",
+      "bytes_at_index": 548448,
+      "sha256": "9fea0d4985e9e73ce0eb7fc975fb1157a00d90424a45a1ca5cfbbd63be5fccf7"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/observe.py",
+      "bytes_at_index": 2321
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/raw_udp_summary.json",
+      "bytes_at_index": 5566,
+      "sha256": "0facdb9575838011fbd1f7540ade9ae83957075d40f505d3774464c29a4b69fc"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/summary.json",
+      "bytes_at_index": 3875,
+      "sha256": "8d3ab55817443a5d2e532ed746d03c8cccd89e21a607d3f4be5da35ff8adf682"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_00.bin",
+      "bytes_at_index": 1080,
+      "sha256": "d20beb1e427d74085852a57e9c7bb4611e274012193f0a6cd540d0492d26f096"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_01.bin",
+      "bytes_at_index": 1080,
+      "sha256": "735e314754f86ee8e816182c92c62d4e57a7aca07eb98e243ae213ea64532308"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_02.bin",
+      "bytes_at_index": 1080,
+      "sha256": "d01c5788a30d65a9ac608d9eb1209889e703c93536fd9274e3d22a703cba80b1"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_03.bin",
+      "bytes_at_index": 1080,
+      "sha256": "a06da1ccdb96fa3773d51471e7c15a9f491fbcddc382a58e439ad52de0061c69"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_04.bin",
+      "bytes_at_index": 1080,
+      "sha256": "43a256b21b8c8c46e64418d9df30cb5e4b1fa53e636d95a84f1112f8798ffc10"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_05.bin",
+      "bytes_at_index": 1080,
+      "sha256": "d5ed7a03f7f8f40ac4957dd059b9f87c943043bbf4e405ddc10f0ffb42b846a4"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_06.bin",
+      "bytes_at_index": 1080,
+      "sha256": "e29d2c61b7054bef7b022f9d5f181687765930ffa3a8f37d67230a89f92c9f44"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_07.bin",
+      "bytes_at_index": 1080,
+      "sha256": "eece6e1eaede97513a891aafd6649fbfc8c331d2c17f0fcd4ab1b0e5c35c7c46"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_08.bin",
+      "bytes_at_index": 1080,
+      "sha256": "e16b4e6a712c47858877310a46b321a4b5882862105ad746a7e71278a5ce291d"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_09.bin",
+      "bytes_at_index": 1080,
+      "sha256": "702da806d7da403ac64795553c6a6b06091cb07e84aa9371613062df8255fb9e"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_10.bin",
+      "bytes_at_index": 1080,
+      "sha256": "bc115b586c4f65e344bc8698bca6d400d4a7439eead36590d1f37a14cb99c550"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_11.bin",
+      "bytes_at_index": 1080,
+      "sha256": "726f77970a5b216d93cca071cd98103db761ad671015485d7b38105ca002d5e1"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_12.bin",
+      "bytes_at_index": 1080,
+      "sha256": "d123d4dbf8880319c75dff90484cd009aa9db7c6ca289d3acfea184bf9293a69"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_13.bin",
+      "bytes_at_index": 1080,
+      "sha256": "31bb2858dd03fbb986f83c68639b87e0cfa2eb0a1d5616e250cee263887c15dd"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_14.bin",
+      "bytes_at_index": 1080,
+      "sha256": "38044aef98a13297cd27d37d41f14db264d121e76d8b58ae00d86d2ed59ec117"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_15.bin",
+      "bytes_at_index": 1080,
+      "sha256": "2d373da47e74867ccbd133e7578b7b553392b2be621cafc29be1bce2603f2181"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_16.bin",
+      "bytes_at_index": 1080,
+      "sha256": "38710cd0efd4c1b289e36dd122248dd05b66e3bd52c37b702b72d3af44f5ae09"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_17.bin",
+      "bytes_at_index": 1080,
+      "sha256": "3515f417ea935dff34b8c7ae9bb60a1895dae3e1bfdfdc1d06ff0562d66381ab"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_18.bin",
+      "bytes_at_index": 1080,
+      "sha256": "7eaf394278803936359f3ecc02f27fef61e93199e1e0b47268c8f2c296f95989"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1000/udp_19.bin",
+      "bytes_at_index": 1080,
+      "sha256": "cb31e534bffef934b199a2183eee36b5a3273dfe94b749d0d574fa7e6f7eb670"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1003/camera.jpg",
+      "bytes_at_index": 214384
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1003/cloud_sample.npz",
+      "bytes_at_index": 433912,
+      "sha256": "87d08090f562bd565efbaabd08f0990920ab9e70e91be4122e01f5f3ceb48e7f"
+    },
+    {
+      "path": "outputs/diagnosis_20261104_1003/summary.json",
+      "bytes_at_index": 3881,
+      "sha256": "6f23fa4479e2c2a1154c36499caf7f85870b85633afb8ce0fe3746b3e3a143ac"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_000.jpg",
+      "bytes_at_index": 218813
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_005.jpg",
+      "bytes_at_index": 218577
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_010.jpg",
+      "bytes_at_index": 218616
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_015.jpg",
+      "bytes_at_index": 218937
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_020.jpg",
+      "bytes_at_index": 219454
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_025.jpg",
+      "bytes_at_index": 219312
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_030.jpg",
+      "bytes_at_index": 219330
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_035.jpg",
+      "bytes_at_index": 220022
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_040.jpg",
+      "bytes_at_index": 221094
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_045.jpg",
+      "bytes_at_index": 220217
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_050.jpg",
+      "bytes_at_index": 220576
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/camera_055.jpg",
+      "bytes_at_index": 220707
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/counts.json",
+      "bytes_at_index": 123,
+      "sha256": "029a8c4ec1931fb013ce1fadc2d26056f98caf2319b2aa368e9202fe5396e668"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/details.jsonl",
+      "bytes_at_index": 99570,
+      "sha256": "6d64cda39ece79862b6672157d887f72e8395c750378e20db640e274d2aed9d8"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/events.jsonl",
+      "bytes_at_index": 437742,
+      "sha256": "b53c8326a4664521430d0ab5a77da912b757abf2314cb1befa2fdca218abb87a"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/far_cloud_capture.txt",
+      "bytes_at_index": 1,
+      "sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/far_raw_0.npz",
+      "bytes_at_index": 434736,
+      "sha256": "26c4d895155b0dca2b22b4648d98cb50edc3f7bcf495dedd75cfd2b7556cf7e1"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/far_raw_1.npz",
+      "bytes_at_index": 434866,
+      "sha256": "b86789a6838dc4546999b25e5b17c08881ca88ef0445cdee3edb7c92868cb42a"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/far_raw_2.npz",
+      "bytes_at_index": 435087,
+      "sha256": "704e325e36bdd7a9cddbf7b7f4fe100046b5a777ccc0dd6563e6bf04f62a10a5"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/far_raw_3.npz",
+      "bytes_at_index": 435101,
+      "sha256": "92985f49ff90977f432d3ceb6344ce53358f5894d82c0dbc64dd697e26172c04"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_1005/far_raw_4.npz",
+      "bytes_at_index": 434866,
+      "sha256": "0a5c3980bad66460a885c45692b2ae0dd3997cdf3bfbd893ef7be38c8dc350ff"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_000.jpg",
+      "bytes_at_index": 217056
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_005.jpg",
+      "bytes_at_index": 224112
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_010.jpg",
+      "bytes_at_index": 225361
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_015.jpg",
+      "bytes_at_index": 225315
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_020.jpg",
+      "bytes_at_index": 225321
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_025.jpg",
+      "bytes_at_index": 225276
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_030.jpg",
+      "bytes_at_index": 225140
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_035.jpg",
+      "bytes_at_index": 224917
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_040.jpg",
+      "bytes_at_index": 225167
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_045.jpg",
+      "bytes_at_index": 225108
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_050.jpg",
+      "bytes_at_index": 224726
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/camera_055.jpg",
+      "bytes_at_index": 225159
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/counts.json",
+      "bytes_at_index": 123,
+      "sha256": "27d35ac634ac0764abc14b07621bcb61e152a17522d133b7cf5ee01006ec5779"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/details.jsonl",
+      "bytes_at_index": 180032,
+      "sha256": "3bf2fd44de3c2199a366a3a9478df7795b25eb5f1f9ae59d088f3b43a027e9c5"
+    },
+    {
+      "path": "outputs/moving_monitor_20261104_second/events.jsonl",
+      "bytes_at_index": 408717,
+      "sha256": "9e2260475ee0950aaacb22d3bf040bce7518ffc4bfa416c7d0972820a111f472"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_000.jpg",
+      "bytes_at_index": 240256
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_005.jpg",
+      "bytes_at_index": 240766
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_010.jpg",
+      "bytes_at_index": 240267
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_015.jpg",
+      "bytes_at_index": 240562
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_020.jpg",
+      "bytes_at_index": 240776
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_025.jpg",
+      "bytes_at_index": 241108
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_030.jpg",
+      "bytes_at_index": 241158
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_035.jpg",
+      "bytes_at_index": 241026
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_040.jpg",
+      "bytes_at_index": 241829
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_045.jpg",
+      "bytes_at_index": 242786
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_050.jpg",
+      "bytes_at_index": 243718
+    },
+    {
+      "path": "outputs/far_range_live_20261104/camera_055.jpg",
+      "bytes_at_index": 245431
+    },
+    {
+      "path": "outputs/far_range_live_20261104/counts.json",
+      "bytes_at_index": 123,
+      "sha256": "82db8cf3862527c0342a13a9cfa2309c167b0334fbb54a9346b653726203eae1"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/details.jsonl",
+      "bytes_at_index": 153599,
+      "sha256": "05021305f1a0272df25c8a67dc8d6369b2062d2c290c2637998a35465244c832"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/events.jsonl",
+      "bytes_at_index": 559880,
+      "sha256": "1a3d44676233b2d7fa46a31841754a355cf68b396ab4f1b5696eb59d3ae389ea"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/far_cloud_capture.txt",
+      "bytes_at_index": 1,
+      "sha256": "ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/far_raw_0.npz",
+      "bytes_at_index": 429314,
+      "sha256": "e23160bc90eff18c027db44ac5f2f107136d5fd9e6ea6b23fe06b20f2e8f536e"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/far_raw_1.npz",
+      "bytes_at_index": 429148,
+      "sha256": "7996a17eed103aff10cdbb501d52791795c6623e6550ee0fa853a5ef17b16c16"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/far_raw_2.npz",
+      "bytes_at_index": 429016,
+      "sha256": "a31a40f78101ad3fb18e5c38b80a7999ab83a637df4641f8aaa456cf7e49851d"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/far_raw_3.npz",
+      "bytes_at_index": 428532,
+      "sha256": "320149069def65ef1c5a20b1f4bbe3e47ea4b53e3faab6404c5202fe461096fc"
+    },
+    {
+      "path": "outputs/far_range_live_20261104/far_raw_4.npz",
+      "bytes_at_index": 428815,
+      "sha256": "ac298f90b830384ac9f3a8de0aab0cbfec28b632f24c587a5f5ed9c9193f2ca8"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/a2.log",
+      "bytes_at_index": 239,
+      "sha256": "49a687de37e9aa53e31725541a5e4e438091f56eb7de9042ef232a1faab0f033"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/association_used.yaml",
+      "bytes_at_index": 1800,
+      "sha256": "87a4e26ea695aceb83ca28c182950138ff1565ad6988152443d0a788a1e0d46b"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/camera.log",
+      "bytes_at_index": 5747,
+      "sha256": "960c9c5f27d70d92f5de2760430f0bec9243336d1ef2c077befe1c1e61bcd252"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/isolation.env",
+      "bytes_at_index": 75
+    },
+    {
+      "path": "outputs/ui_20261104_100331/latest.jpg",
+      "bytes_at_index": 323632
+    },
+    {
+      "path": "outputs/ui_20261104_100331/lidar.log",
+      "bytes_at_index": 662639,
+      "sha256": "993c332ead8d20fc7550e5179c1d43398d2035b55a04c5f9a866230123c70406"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/frames.csv",
+      "bytes_at_index": 288200
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00001.mp4",
+      "bytes_at_index": 10975221
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00002.mp4",
+      "bytes_at_index": 12073415
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00003.mp4",
+      "bytes_at_index": 12609667
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00004.mp4",
+      "bytes_at_index": 12248789
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00005.mp4",
+      "bytes_at_index": 11983132
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00006.mp4",
+      "bytes_at_index": 12499168
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00007.mp4",
+      "bytes_at_index": 12015593
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00008.mp4",
+      "bytes_at_index": 12046954
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00009.mp4",
+      "bytes_at_index": 12668745
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00010.mp4",
+      "bytes_at_index": 12488896
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00011.mp4",
+      "bytes_at_index": 12092966
+    },
+    {
+      "path": "outputs/ui_20261104_100331/recordings/ui_00012.mp4",
+      "bytes_at_index": 6032979
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/2026-11-04-10-03-36-265341-ubuntu22-52744/launch.log",
+      "bytes_at_index": 456,
+      "sha256": "a72c398ee6e4f71718ebb49b0344c0790e0c29823de96a49216653894ccf02fb"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/a2_camera_node_52746_1793754216560.log",
+      "bytes_at_index": 239,
+      "sha256": "49a687de37e9aa53e31725541a5e4e438091f56eb7de9042ef232a1faab0f033"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/association_node_52748_1793754216261.log",
+      "bytes_at_index": 218,
+      "sha256": "8b122bc775a2e6c8ba57abaf8d2317a28a94fc4c9fe05177bc0f2e80bd7357cf"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/camera_driver_gv_52940_1793754216320.log",
+      "bytes_at_index": 3395,
+      "sha256": "a564b4bec194801c88661d47103bf37357c97733d4e26ac71ade28ebf6132744"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/fusion_node_52747_1793754216123.log",
+      "bytes_at_index": 177,
+      "sha256": "9af367451ed3da8212404973347d6b96bac720eb51806a896a9addb316d764f8"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/hesai_ros_driver_node_52745_1793754215892.log",
+      "bytes_at_index": 71,
+      "sha256": "5a4a68981d21a9c5e05e9eef8c26a1818afab49a06dd28c7c9be558857742544"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ros_logs/python3_52571_1793754211285.log",
+      "bytes_at_index": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/shadow.log",
+      "bytes_at_index": 177,
+      "sha256": "9af367451ed3da8212404973347d6b96bac720eb51806a896a9addb316d764f8"
+    },
+    {
+      "path": "outputs/ui_20261104_100331/ui.log",
+      "bytes_at_index": 271,
+      "sha256": "d07ace0590a256d17d4aef286d48e7223c72ee12b0beeca5063dad0206749d58"
+    },
+    {
+      "path": "outputs/ui_20261104_101515/a2.log",
+      "bytes_at_index": 168
+    },
+    {
+      "path": "outputs/ui_20261104_101515/association_used.yaml",
+      "bytes_at_index": 1957
+    },
+    {
+      "path": "outputs/ui_20261104_101515/camera.log",
+      "bytes_at_index": 4715
+    },
+    {
+      "path": "outputs/ui_20261104_101515/isolation.env",
+      "bytes_at_index": 75
+    },
+    {
+      "path": "outputs/ui_20261104_101515/latest.jpg",
+      "bytes_at_index": 326314
+    },
+    {
+      "path": "outputs/ui_20261104_101515/lidar.log",
+      "bytes_at_index": 244145
+    },
+    {
+      "path": "outputs/ui_20261104_101515/recordings/frames.csv",
+      "bytes_at_index": 105626
+    },
+    {
+      "path": "outputs/ui_20261104_101515/recordings/ui_00001.mp4",
+      "bytes_at_index": 12880964
+    },
+    {
+      "path": "outputs/ui_20261104_101515/recordings/ui_00002.mp4",
+      "bytes_at_index": 14095191
+    },
+    {
+      "path": "outputs/ui_20261104_101515/recordings/ui_00003.mp4",
+      "bytes_at_index": 11410952
+    },
+    {
+      "path": "outputs/ui_20261104_101515/recordings/ui_00004.mp4",
+      "bytes_at_index": 11851694
+    },
+    {
+      "path": "outputs/ui_20261104_101515/recordings/ui_00005.mp4",
+      "bytes_at_index": 2621484
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/2026-11-04-10-15-21-229869-ubuntu22-64622/launch.log",
+      "bytes_at_index": 367
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/a2_camera_node_64624_1793754921519.log",
+      "bytes_at_index": 168
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/association_node_64626_1793754921187.log",
+      "bytes_at_index": 147
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/camera_driver_gv_64844_1793754921280.log",
+      "bytes_at_index": 3324
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/fusion_node_64625_1793754921135.log",
+      "bytes_at_index": 106
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/hesai_ros_driver_node_64623_1793754920857.log",
+      "bytes_at_index": 0
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ros_logs/python3_64449_1793754915960.log",
+      "bytes_at_index": 0
+    },
+    {
+      "path": "outputs/ui_20261104_101515/shadow.log",
+      "bytes_at_index": 106
+    },
+    {
+      "path": "outputs/ui_20261104_101515/ui.log",
+      "bytes_at_index": 200
+    },
+    {
+      "path": "outputs/far_range_rollback_20261104/association_node",
+      "bytes_at_index": 2201744
+    },
+    {
+      "path": "outputs/far_range_rollback_20261104/association_used.yaml",
+      "bytes_at_index": 1800,
+      "sha256": "87a4e26ea695aceb83ca28c182950138ff1565ad6988152443d0a788a1e0d46b"
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_build.log",
+      "bytes_at_index": 3712,
+      "sha256": "8f390f2f0373433c7a0be3e468f60417c34418e81f269c5794f0ed2423e9c4c6"
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_core.log",
+      "bytes_at_index": 1350,
+      "sha256": "ac7404152489cb88b9c309f6f7d6c33449024a3fb00ea3a9ddda98d5673725e7"
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_replay_new.json",
+      "bytes_at_index": 3229,
+      "sha256": "ba2f256039c0097a52845fbf5aefa8f6a1494fc5e8cc2266f6e911e8589a5c6c"
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_replay_new.json.csv",
+      "bytes_at_index": 23993
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_ros.log",
+      "bytes_at_index": 603,
+      "sha256": "ed44ab267ab38e05009d4c75ecacb8f5b3b0ed3b3f2c489d72b83511c9ca45af"
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_synthetic.json",
+      "bytes_at_index": 2420,
+      "sha256": "7d880a2a53581ade6f20cd6edbafbd5014f4443ac19a8d639d9804415b86c227"
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_synthetic.json.csv",
+      "bytes_at_index": 21809
+    },
+    {
+      "path": "cpp/evidence/far_range_20261104/far_synthetic.log",
+      "bytes_at_index": 67,
+      "sha256": "199d904458ae0235f615db63077d9e3629bb834ef3cd03133492f146781b3e6d"
+    }
+  ]
+}

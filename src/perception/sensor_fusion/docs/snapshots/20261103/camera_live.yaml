@@ -1,0 +1,29 @@
+/camera_driver_gv:
+  ros__parameters:
+    AcquisitionFrameRate: 21.0
+    ExposureTime: 23841.0
+    Gain: 0.824999988079071
+    camera_driver_gv:
+      vis:
+        image_raw:
+          enable_pub_plugins:
+          - image_transport/raw
+    camera_info_urls:
+    - /home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/reference/A1_RealCar_A2_P5Brake/configs/camera_info_1280x720_uncalibrated.yaml
+    diagnostic_publishing_rate: 0.1
+    diagnostic_yaml_url: ''
+    dynamic_parameters_yaml_url: /home/ailab/git/sangbum/A1_Challenge-main/A1_SensorFusion_CPP/reference/A1_RealCar_A2_P5Brake/configs/camera_dynamic_parameters.yaml
+    frame_id: hikrobot_camera
+    guid: 169.254.222.118
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    stream_names:
+    - vis
+    use_sim_time: false
+    verbose: false
+

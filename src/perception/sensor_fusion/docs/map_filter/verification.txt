@@ -1,0 +1,24 @@
+Internal ctest changing into directory: /home/ailab/git/A1_Total/build/a1_fusion_cpp
+Test project /home/ailab/git/A1_Total/build/a1_fusion_cpp
+    Start 1: core_tests
+1/3 Test #1: core_tests .......................   Passed    0.00 sec
+    Start 2: association_tests
+2/3 Test #2: association_tests ................   Passed    0.00 sec
+    Start 3: map_surface_tests
+3/3 Test #3: map_surface_tests ................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   0.03 sec
+ROS map filter: transform, foreground, low/stale quality, missing TF, epoch mismatch, dead map server: PASS
+Map identity: exact source+surface hashes, missing/corrupt cache bypass: PASS
+[INFO] [1793803468.699457527] [a1_association]: Patchwork++ / PCL clusters / CV-Kalman Hungarian / camera-bin projection preview. NO brake output.
+[INFO] [1793803498.317828991] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+Rotated 4.5 m car with >2.6 m axis-aligned width acquired: PASS
+Thin rear acquisition + closer off-camera background excluded: PASS
+ROS dropout prediction + primary hold + same-ID reacquisition: PASS
+Two independent camera/LiDAR matches + three-object cap: PASS
+Association pipeline: mapped wall removed, foreground lead retained: PASS
+1600x860 dashboard + no-cloud stale banner: PASS
+Configured hemisphere membership and lidar_vehicle frame: PASS
+Patchwork++ ground / single projected candidate / NaN camera metrics ignored / multiple same-bin clusters rejected / stale pair rejected: PASS
