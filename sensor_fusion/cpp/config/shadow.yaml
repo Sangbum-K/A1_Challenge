@@ -10,7 +10,8 @@ a1_fusion:
     gnss_odom_topic: /a1_gnss/odom
     gnss_status_topic: /gsof_client/gsof/ins_solution_49
     gnss_odom_verified: false
-    # Default driver time_source=now; GPS mode needs the relay's UTC offset here.
+    # A1_localization's gsof_client.yaml uses time_source "now", so #49 and /a1_gnss/odom share a clock.
+    # With time_source "gps" the relay converts only /a1_gnss/*; set 315964782.0 (1980 epoch - 18 s) here.
     gnss_status_stamp_offset_s: 0.0
     imu_topic: /gnss/imu
     imu_frame: ins
@@ -19,8 +20,8 @@ a1_fusion:
     imu_calibration_s: 2.0
     imu_max_integration_s: 10.0
     base_from_imu: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    # Deliberately unverified: fill measured installation values before enabling.
     # clock_verified, calibration_verified and base_from_lidar live in calibration.yaml.
+    # ins mode only: base_to_ins_m is A1_localization's measured base_link -> ins (vehicle_extrinsics.yaml).
     ins_mount_verified: false
     camera_metric_validated: false
     ins_topic: /gsof_client/gsof/ins_solution_49
@@ -30,7 +31,7 @@ a1_fusion:
     point_time_field: timestamp
     ins_stamp_offset_s: 0.0
     ins_to_vehicle_yaw_rad: 0.0
-    base_to_ins_m: [0.0, 0.0, 0.0]
+    base_to_ins_m: [0.84, 0.0, 0.50]
     # Camera/bumper alignment and motion still require validation.
     # Legacy fusion mode only. Nominal optical transform: camera 0.8 m forward, 0.3 m below LiDAR.
     # Lateral=0 assumed; camera level/forward nominal, fine angles/intrinsics unverified.

@@ -2,7 +2,7 @@
 set -eo pipefail
 PROJECT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 case "${1:-start}" in
-  lidar-check|topic-audit)
+  lidar-check|lidar-rate|topic-audit)
     mode="$1"; shift
     exec bash "$PROJECT/run.sh" "$mode" "$@"
     ;;

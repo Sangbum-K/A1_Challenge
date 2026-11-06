@@ -80,6 +80,15 @@ def range_shells(tracks):
     return dict(shells)
 
 
+def scan_rate(rows):
+    """Rate of the scans that were processed; a scan dropped for lateness leaves a gap here."""
+    stamps = [float(row['stamp']) for row in rows]
+    gaps = [b - a for a, b in zip(stamps, stamps[1:]) if b > a]
+    if not gaps:
+        return None
+    return {'median_hz': 1 / statistics.median(gaps), 'longest_gap_s': max(gaps), 'gaps_over_0.15s': sum(g > .15 for g in gaps)}
+
+
 def summarize(association_csv, labels=None):
     association_csv = Path(association_csv)
     rows = read(association_csv)
@@ -95,6 +104,7 @@ def summarize(association_csv, labels=None):
         'camera_state_share': shares(row['camera_state'] for row in tracks),
         'processing_ms': {'p50': percentile(times, .5), 'p95': percentile(times, .95)},
         'dropped_scans': int(rows[-1]['dropped_scans']) if rows else 0,
+        'scan_rate': scan_rate(rows),
         'range_shells': range_shells(tracks),
         'far_vehicle_scans': sum(int(row['far_vehicle']) for row in tracks),
     }

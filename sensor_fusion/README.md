@@ -37,6 +37,7 @@ LiDAR 10 Hz ─ 지면 제거 ─ 군집 ─ 추적 ─ 카메라 근거 누적 
 | 카메라 | UI가 소유·기동하는 것이 기본값 (`A1_CAMERA_MODE`) |
 | 출력 | `/lead_fusion/*` 토픽, `association.csv`, `tracks.csv`, UI 영상 |
 
+센서 토픽과 도메인은 팀의 `A1_localization`과 같다. [계약 표](SENSOR_ENVIRONMENT_KR.md#localizationa1_localization과-맞춘-계약)
 자차 입력의 검증 플래그(`gnss_odom_verified` 등)는 모두 false다. `/gnss/imu` 적분은 직접 선택하는 실험 모드이며 자동 fallback하지 않는다.
 
 ## 실행
@@ -55,6 +56,7 @@ bash build.sh --packages-up-to a1_fusion_cpp
 | 상태 확인 | `… run_sensor_fusion.sh status` |
 | 종료 (MP4 마감) | `… run_sensor_fusion.sh stop` |
 | LiDAR 수신 점검 | `… run_sensor_fusion.sh lidar-check` |
+| LiDAR 발행 Hz 측정 (5초, 4 Hz 미만이면 실패) | `… run_sensor_fusion.sh lidar-rate` |
 | 토픽 감사 | `… run_sensor_fusion.sh topic-audit --seconds 20` |
 
 시험은 `run.sh`에서 한다.
@@ -75,6 +77,7 @@ bash build.sh --packages-up-to a1_fusion_cpp
 | `A1_FUSION_TRANSPORT` | `direct`(기본) / `bridge` | `bridge`는 이전 domain107 격리 경로이며 LiDAR만 전달한다. 맵과 TF를 받지 못해 맵 필터가 꺼진다 |
 | `A1_RECORD_BAG` | `1` | 주행 원본 녹화 |
 | `A1_BAG_MIN_FREE_GB` | 기본 `64` | 녹화 전 필요한 빈 공간 |
+| `A1_MAP` | localization `map:=`과 같은 값 (접두 경로 또는 `.mm`) | UI 시작 때 그 맵의 표면 캐시를 확인하고 맵 서버를 함께 시작한다. 없으면 맵 필터는 우회된다 |
 | `A1_MAP_SURFACES` | `.surfaces.pcd` 경로 | 재생 때 맵 서버가 읽을 맵 |
 
 ## 녹화·재생·평가
@@ -105,6 +108,12 @@ python3 src/perception/sensor_fusion/cpp/tools/track_eval.py <out>/association.c
 - 더 가까운 차가 조건을 갖춰 0.3초 유지되면 주 대상을 교체한다.
 - 카메라 근거 없는 근거리 배경은 주 대상이 되지 못한다.
 
+### LiDAR 속도 감시
+
+트랙 확정과 카메라 근거는 시간이 아니라 **스캔 수**로 쌓이고 10 Hz에 맞춰 정했다. 최근 11개 스캔 간격의 중앙값이 7 Hz 미만이면 경고를 내고,
+4 Hz 미만이면 주 대상을 비우고 상태를 `lidar_rate_low`로 낸다(근거 상한이 확정 기준 3.0에 못 미치기 시작하는 지점은 약 3.2 Hz).
+`association.csv`의 `scan_dt_s`에 스캔 간격이 남고, `track_eval.py` 요약의 `scan_rate`에 처리된 스캔의 중앙값 Hz가 나온다. UI 시작 때도 같은 측정을 한다.
+
 ### 거리 범위
 
 | 항목 | 값 |
@@ -121,6 +130,7 @@ python3 src/perception/sensor_fusion/cpp/tools/track_eval.py <out>/association.c
 ### 맵 기반 필터
 
 localization이 선택한 같은 맵의 바닥·수직 평면 후보를 해시 검증 후 연결한다. 최근 ICP 품질이나 LiDAR 시각의 TF가 없으면 기존 필터로 우회한다.
+팀의 `A1_localization`은 맵 표면을 발행하지 않으므로 `A1_MAP`을 주어야 이 필터가 켜진다.
 세 맵 비교, 토픽, 재생성·검증 방법은 [맵 필터 안내](docs/map_filter/README.md)에 있다.
 
 ### 노출 조절 (UI)

@@ -1,6 +1,6 @@
 # A1_Total 통합 인계 — 2026-11-04
 
-[현재 실행 안내](README.md), [워크스페이스 센서 구조·토픽 감사](../../../docs/SENSOR_PIPELINE_KR.md)를 먼저 읽는다.
+[현재 실행 안내](README.md)와 A1_Total의 `docs/SENSOR_PIPELINE_KR.md`(센서 구조·토픽 감사, 이 저장소에는 없음)를 먼저 읽는다.
 
 사용자 요청: 라이다 2 Hz 관측의 도메인/로컬 토픽/미사용 연결을 전체 검토하고 A1_Total을 정리.
 기본 직접 구독(domain0), 선택적 bridge(domain107), 공통 config/ros.env, 읽기 전용 topic audit를 도입한다.
@@ -33,3 +33,10 @@ P5 구독은 mode/ego_source에 필요한 입력만 생성한다. debug ROS 출�
 [설계](../docs/superpowers/specs/2026-11-06-sensor-fusion-tracking-association-design.md) 16절에 남은 현장 작업이 있다.
 사용자 결정: 레이싱라인 사용, F2 재설계 보류, 정적 구조물은 맵으로 판단, 120 m는 차량 판단과 움직임 기록이 될 때만 대상으로 확대.
 미검증 값도 CSV에 남기되 `valid=false`, `request=NaN`은 유지한다. 합성 시험만 통과했고 실제 빌드와 실차는 미검증이다.
+
+2026-11-06 저녁 localization 저장소(`A1_localization-main`) 기준 센서 입력 대조. 그 저장소는 수정하지 않았다.
+IP 주소와 인터페이스 이름은 사용자 결정으로 이 저장소 값이 기준이다. 토픽·도메인(기본 0)·프레임·LiDAR 필드는 이미 같았다.
+고친 것: ego 정렬 상태를 3(ALIGNED)과 4(FULL_NAV) 모두 허용(localization 기록은 끝까지 3), GSOF #50 누락 사유 분리,
+맵 서버를 `A1_MAP`으로 직접 시작(localization에는 맵 서버가 없다). 계약 표는 [SENSOR_ENVIRONMENT_KR.md](SENSOR_ENVIRONMENT_KR.md), 경위는 [개발 기록](../docs/devlog/2026-11-06-localization-alignment.md).
+C++ 컴파일과 스모크는 못 했다. 남은 위험(드라이버 중복 기동, 비RTK 속도)은 개발 기록에 있다.
+2026-11-06 밤 정합성 점검의 꼭 고칠 것 3건 수정: 맵 필터 TF 조회(`odom→lidar` 스캔 시각 + `map→odom` 최신 0.5 s 이내), LiDAR 속도 감시(7 Hz 경고, 4 Hz 미만 주 대상 해제, `lidar-rate`), `gnss_ego_smoke` 연결. 경위와 차량 PC 확인 순서는 [개발 기록](../docs/devlog/2026-11-06-must-fixes.md).

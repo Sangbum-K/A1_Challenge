@@ -29,6 +29,19 @@
 
 ## 실행 연결
 
+> **2026-11-06:** 아래는 A1_Total의 localization 런처를 고쳐 맵 서버를 붙였을 때의 설명이다. 팀의 `A1_localization`(main)에는
+> `map_surface_filter`와 맵 서버가 없다. 그 저장소는 건드리지 않고 우리 UI가 직접 시작한다.
+>
+> ```bash
+> # localization을 시작할 때 쓴 map:= 값과 같아야 한다. 캐시는 prepare_map_surfaces.py로 먼저 만든다.
+> A1_MAP=$MAP_DIR/map bash src/perception/sensor_fusion/run_sensor_fusion.sh
+> ```
+>
+> `.mm`이 캐시를 만든 뒤 바뀌었거나 캐시가 없으면 UI가 시작하지 않는다. `A1_MAP`을 빼면 맵 필터는 우회된다.
+> localization이 실제로 읽은 `.mm`은 확인할 수 없으므로 두 명령에 같은 값을 주는 것은 운용자 몫이다.
+> 잘못된 맵이면 ICP 품질 기준(0.5)에서 걸러질 수 있으나 그것이 보장은 아니다.
+> `/localization/map_surfaces` 발행자가 이미 있으면(예전 A1_Total 런처) UI가 시작하지 않는다.
+
 기존 localization 런처에 `map_surface_filter` 인자(기본 true)를 추가했다.
 localization 모드에서 선택된 **동일 `.mm`** 및 표면 PCD의 SHA-256이 manifest와
 일치할 때만 `map_surface_server`를 시작한다. 캐시가 없거나 바뀌었으면 알림을
@@ -51,7 +64,8 @@ bridge 모드는 LiDAR만 전달하므로 다른 도메인의 map/TF/quality를 
 - `/localization/map_surfaces`: reliable/transient-local, map 프레임의 PointNormal 점군.
 - `/localization/map_surfaces_epoch`: 10 Hz 서버 생존 및 해당 점군 세대 식별용 Header.
 - `/lidar_odometry/pose_quality`: 기존 ICP 품질. 0.5 이상, 최근 0.3초 입력 필요.
-- `/tf`, `/tf_static`: 해당 라이다 시각의 `map ← LiDAR header.frame_id` 변환 필요.
+- `/tf`, `/tf_static`: `odom ← LiDAR header.frame_id`는 스캔 시각에, `map ← odom`은 가장 최신 값(`max_map_odom_age_s` 0.5 s 이내)을 읽어 곱한다.
+  LO 포즈가 스캔보다 0.1~0.3 s 늦게 나오므로(localization 문서) `map→odom`도 늦다. 스캔 시각 그대로 조회하면 실패할 것으로 판단해 고쳤다(2026-11-06, 코드와 문서 기준 추정이며 실차 미확인). 상태는 `tf_unavailable`(변환 없음), `tf_stale`(너무 오래됨).
 - `/lead_fusion/map_removed`: 구독자가 있을 때 제거된 점 발행, lidar_vehicle 프레임.
   intensity 1=바닥 후보, 2=벽 후보.
 

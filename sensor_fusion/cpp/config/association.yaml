@@ -2,6 +2,10 @@ a1_association:
   ros__parameters:
     map_filter_enabled: true
     map_frame: map
+    # MOLA publishes map->odom about 0.25 s late, so it is read at its newest sample (not older than
+    # max_map_odom_age_s); odom->lidar is read at the scan time.
+    odom_frame: odom
+    max_map_odom_age_s: 0.5
     # Camera and LiDAR geometry lives in calibration.yaml.
     # Existing vehicle_extrinsics.yaml: LiDAR z=1.20m above ground.
     sensor_height_m: 1.2
@@ -73,4 +77,8 @@ a1_association:
     # User reconfirmed original -LiDAR Y forward; no ROI heading offset.
     # Crop heading only; not a measured camera extrinsic yaw correction.
     lidar_roi_center_deg: 0.0
+    # LiDAR scan-rate guard. Track confirmation and camera evidence are tuned for 10 Hz scans:
+    # warn below scan_rate_warn_hz, no primary target below scan_rate_min_hz (evidence cannot confirm under ~3.2 Hz).
+    scan_rate_warn_hz: 7.0
+    scan_rate_min_hz: 4.0
     show_window: false

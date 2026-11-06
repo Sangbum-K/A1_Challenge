@@ -42,7 +42,7 @@
 | Hesai 드라이버 | 호스트에서 한 번만 실행한다. ROS 도메인이 달라도 UDP 2368은 공유되므로 두 번 실행하면 점유 실패나 수신 분배 문제가 생긴다 |
 | `setup_lidar_host.sh` | `A1_localization`의 이 스크립트는 호스트 주소를 192.168.1.100/24로 바꾼다. 현재 GNSS 포트(enp4s0)에 실행하면 GNSS 주소를 깨뜨린다 |
 | 프로필 우선순위 | 센서 프로필(priority 100)이 원래 프로필보다 앞선다. 예전 용도의 케이블을 같은 포트에 꽂으면 매핑을 다시 확인한다 |
-| GNSS 수신 | 2026-11-04 점검 시점에는 TCP 5017 연결만 확인됐고 GSOF 항법·원시 IMU는 수신되지 않았다. 이후 수신 상태는 이 문서에서 확인하지 못했다 |
+| GNSS 수신 | 2026-11-04 점검 시점에는 TCP 5017 연결만 확인됐고 GSOF 항법·원시 IMU는 수신되지 않았다. 이후 수신 상태는 이 문서에서 확인하지 못했다. localization 쪽 2026-10-08 bag에서는 #49 100 Hz, #50 5 Hz가 수신됐다 |
 | 카메라 교체 | 과거 카메라(DA8931779, 192.168.1.51)와 serial이 다르다. 저장된 장착 보정이 맞는다고 가정하지 않는다 |
 
 재부팅 후 프로필이 유지되는지는 실제로 시험하지 않았다. 점검 상세: [배선·수신](docs/SENSOR_AUDIT_KR.md), [localization·GNSS 호환성](docs/NETWORK_COMPATIBILITY_20261104_KR.md), [공용 LiDAR](docs/SHARED_LIDAR_KR.md).
@@ -183,13 +183,38 @@ P5 단위는 m/s², 제한 요청은 −3~0이다. 결측·보정 미완료·만
 | 카메라 | `/camera_driver_gv/vis/image_raw`, `/camera_driver_gv/vis/camera_info` |
 | LiDAR | `/lidar_points` |
 | 자차 | `/a1_gnss/odom`, `/gsof_client/gsof/ins_solution_49` |
-| 맵 | `/localization/map_surfaces`, `/localization/map_surfaces_epoch`, `/tf`, `/tf_static` |
+| 맵 | `/localization/map_surfaces`, `/localization/map_surfaces_epoch` (우리 `map_surface_server`), `/lidar_odometry/pose_quality`, `/tf`, `/tf_static` |
 | A₂ | `/lead_fusion/a2` |
 | 대응 | `/lead_fusion/association`, `/lead_fusion/association/image` |
 | 점군 | `/lead_fusion/front_points`, `ground`, `nonground`, `clusters`, `map_removed` |
 | 자차 / P5 | `/lead_fusion/ego_motion`, `/lead_fusion/estimate` |
 
 우리 노드는 `/tf`, `/tf_static`, 차량 제어 명령을 **발행하지 않는다.**
+
+### localization(A1_localization)과 맞춘 계약
+
+팀 저장소 `A1_localization-main`의 코드·설정·문서를 2026-11-06에 읽고 맞췄다. 그 저장소는 수정하지 않았다.
+IP 주소와 인터페이스 이름은 이 저장소(현재 배선)의 값이 기준이다. localization의 `setup_lidar_host.sh` 기본값 192.168.1.100과 달라도 맞추지 않는다.
+
+| 항목 | localization 쪽 | 우리 쪽 |
+|---|---|---|
+| ROS 도메인 | 어디에도 지정하지 않는다 → ROS 기본 **0**. `ROS_LOCALHOST_ONLY`와 DDS 프로필도 없다 | direct 모드는 domain 0을 구독한다. 87~96(시험), 107(bridge)은 우리 쪽 격리용이다 |
+| LiDAR | `/lidar_points` PointCloud2, 10 Hz, frame `hesai_lidar`, 128000점 × 26 B, 필드 `x y z intensity ring timestamp`(FLOAT64 초), 호스트 수신 시각(`timestamp_type:=1`). MOLA 구독은 best_effort, depth 10. `/lidar_imu`는 발행자만 있고 메시지가 없다 | 같은 토픽·frame, `SensorDataQoS`, 발행자 1개를 요구한다. `/lidar_imu`는 쓰지 않는다 |
+| GNSS 원본 | `/gsof_client/odom`, `navsat`, `gsof/ins_solution_49`(100 Hz), `gsof/ins_solution_rms_50`(5 Hz). `time_source: "now"` | #49의 정렬 상태만 읽는다 |
+| GNSS 가공 | `/a1_gnss/odom`(`odom`→`base_link`, twist는 `base_link` 축, 약 100 Hz), `/a1_gnss/accel`, `/a1_gnss/navsat` | `/a1_gnss/odom`을 읽는다. `/a1_gnss/accel`은 쓰지 않는다 |
+| TF | `map→odom` MOLA, `odom→base_link` relay, `base_link→hesai_lidar`·`ins` 정적 | 읽기만 한다 |
+| 기준 좌표 | `base_link` = 뒷바퀴 축 중심의 지면점. LiDAR (1.16, 0, 1.20) yaw 90°, INS (0.84, 0, 0.50) | `calibration.yaml`, `shadow.yaml`의 `base_to_ins_m`이 같은 값이다 |
+
+이 계약에서 나오는 조건:
+
+- **정렬 상태:** Applanix `imu_alignment`는 localization의 2026-10-08 bag에서 끝까지 `ALIGNED`(3)였고 `FULL_NAV`(4)는 한 번도 나오지 않았다. 그래서 3과 4를 모두 받는다. 이전에는 4만 받아 실차에서 모든 ego가 거부될 수 있었다.
+- **GSOF #50:** 드라이버는 #50이 오기 전까지 `twist.covariance[0] = -1`을 내고 relay가 그대로 넘긴다. 이 값이 음수면 `gnss_odom_rms_missing`으로 거부한다. Applanix에서 #49와 #50을 모두 켜야 한다.
+- **RTK 품질:** 같은 문서에 따르면 RTK가 아니면 INS 위치가 최대 약 10 m 어긋나고, DGPS 정차 중에 0.6~0.7 m/s가 나온 적이 있다. 우리 ego는 GNSS 상태 1~6을 받으므로 이 속도가 그대로 들어올 수 있다. 속도 정확도는 실차에서 확인하지 않았다.
+- **TF 시각:** localization 문서에 따르면 LO 포즈가 스캔 시각보다 0.1~0.3 s 늦게 나오고, `map→odom`은 그 포즈로 만든다. 맵 필터는 `odom→hesai_lidar`를 스캔 시각에, `map→odom`을 가장 최신 값(0.5 s 이내)으로 읽어 곱한다. 0.5 s보다 오래됐으면 `tf_stale`로 우회한다.
+- **스캔 속도:** localization 문서의 10 Hz를 기준으로 7 Hz 미만 경고, 4 Hz 미만 주 대상 해제(`lidar_rate_low`). `run_sensor_fusion.sh lidar-rate`로 직접 잴 수 있다.
+- **맵 표면:** localization에는 `/localization/map_surfaces` 발행자가 없다. 맵 필터를 켜려면 `A1_MAP=<localization의 map:= 값>`을 주고 UI를 시작한다. 캐시가 그 `.mm`에서 만든 것인지 해시를 확인한 다음 우리 `map_surface_server`가 발행한다. `A1_MAP`이 없으면 맵 필터는 우회된다. [맵 필터 안내](docs/map_filter/README.md)
+- **`/gnss/imu`:** localization 스택에는 이 토픽이 없다. `ego_source: imu`는 별도 IMU 발행자가 있을 때만 쓴다.
+- **쓰지 않는 출력:** `/localization/odom`, `/localization/accel`은 map 보정과 정차 유지가 들어간 제어기용 값이라 ego로 쓰지 않는다. 2026-11-05 결정이다.
 
 ## 빌드 환경
 

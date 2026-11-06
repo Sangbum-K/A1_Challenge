@@ -71,12 +71,29 @@ env ROS_DOMAIN_ID="$LIDAR_SOURCE_DOMAIN" ROS_LOCALHOST_ONLY="${A1_ROS_LOCALHOST_
   cat "$OUT/lidar_preflight.log" >&2
   echo "Shared LiDAR input unavailable. No sensor drivers started." >&2; exit 1;
 }
+# The pipeline counts scans, not seconds, and is tuned for 10 Hz. Fails under 4 Hz, warns under 7 Hz.
+env ROS_DOMAIN_ID="$LIDAR_SOURCE_DOMAIN" ROS_LOCALHOST_ONLY="${A1_ROS_LOCALHOST_ONLY:-$SOURCE_LOCALHOST}" FASTRTPS_DEFAULT_PROFILES_FILE="$ROOT/cpp/config/fastdds_large_images.xml" \
+  python3 "$ROOT/cpp/tools/lidar_rate_check.py" --topic "$LIDAR_SOURCE_TOPIC" >"$OUT/lidar_rate.log" 2>&1 || {
+  cat "$OUT/lidar_rate.log" >&2
+  echo "LiDAR rate too low or missing. No sensor drivers started." >&2; exit 1;
+}
+cat "$OUT/lidar_rate.log"
 printf 'ROS_DOMAIN_ID=%s\nROS_LOCALHOST_ONLY=%s\nA1_FUSION_TRANSPORT=%s\nLIDAR_INPUT=%s\n' "$ROS_DOMAIN_ID" "$ROS_LOCALHOST_ONLY" "$A1_FUSION_TRANSPORT" "$LIDAR_INPUT" >"$OUT/isolation.env"
+# A1_localization publishes no map surfaces. A1_MAP is the same prefix passed to its map:=
+# argument; the cache must have been exported from exactly that .mm. Unset: map filter bypassed.
+MAP_SURFACES=""
+if [[ -n "${A1_MAP:-}" ]]; then
+  MAP_SURFACES="$(python3 -I "$ROOT/tools/prepare_map_surfaces.py" --check "$A1_MAP")" || {
+    echo "No usable map surface cache for A1_MAP=$A1_MAP (see docs/map_filter/README.md)." >&2; exit 1; }
+  [[ -x "$INSTALL/lib/a1_fusion_cpp/map_surface_server" ]] || { echo "Build map_surface_server first." >&2; exit 1; }
+fi
 cp "$ROOT/cpp/config/association.yaml" "$OUT/association_used.yaml"
 cp "$ROOT/cpp/config/calibration.yaml" "$OUT/calibration_used.yaml"
 python3 "$ROOT/cpp/tools/isolation_preflight.py"
 # Avoid taking over or mixing with an already running sensor/pipeline.
-for topic in /camera_driver_gv/vis/image_raw /lead_fusion/input/lidar_points /lead_fusion/a2 /lead_fusion/association /lead_fusion/estimate /lead_fusion/ego_motion; do
+topics=(/camera_driver_gv/vis/image_raw /lead_fusion/input/lidar_points /lead_fusion/a2 /lead_fusion/association /lead_fusion/estimate /lead_fusion/ego_motion)
+if [[ -n "$MAP_SURFACES" ]]; then topics+=(/localization/map_surfaces); fi
+for topic in "${topics[@]}"; do
   info="$(ros2 topic info "$topic" --no-daemon --spin-time 1 2>/dev/null || true)"
   if [[ "$topic" == /camera_driver_gv/vis/image_raw && "$CAMERA_MODE" == shared ]]; then
     if [[ ! "$info" =~ Publisher\ count:\ 1([^0-9]|$) ]]; then
@@ -130,6 +147,10 @@ launch bag ros2 bag record -o "$OUT/bag" --max-bag-size 4000000000 \
   /camera_driver_gv/vis/image_raw "$LIDAR_INPUT" /lead_fusion/a2 \
   /a1_gnss/odom /gsof_client/gsof/ins_solution_49 \
   /tf /tf_static /lidar_odometry/pose_quality
+fi
+if [[ -n "$MAP_SURFACES" ]]; then
+  launch map_surfaces "$INSTALL/lib/a1_fusion_cpp/map_surface_server" --ros-args -p "surface_file:=$MAP_SURFACES"
+  echo "Map surfaces: $MAP_SURFACES (must be the map localization loaded)"
 fi
 launch shadow env A1_CPP_INSTALL="$INSTALL" bash "$ROOT/run.sh" fusion -p "lidar_topic:=$LIDAR_INPUT"
 launch ui bash "$ROOT/run.sh" association -p "lidar_topic:=$LIDAR_INPUT" -p "csv_path:=$OUT/association.csv" -p show_window:=true -p "preview_path:=$OUT/latest.jpg" -p "recording_dir:=$OUT/recordings" "$@"

@@ -30,8 +30,8 @@ def main():
    roof=np.stack([xx.ravel(),yy.ravel(),np.full(xx.size,.35)],axis=1)
    return np.concatenate([front,roof])+np.array([0,y,0])
   map_active=False
-  def phase(two=False,send_camera=True,multi=False,three=False,drop=False,background=False,rear_only=False,rotated=False):
-   begin=len(rows);end=time.monotonic()+2.5;next_frame=time.monotonic();frame_index=0
+  def phase(two=False,send_camera=True,multi=False,three=False,drop=False,background=False,rear_only=False,rotated=False,period=.1,seconds=2.5):
+   begin=len(rows);end=time.monotonic()+seconds;next_frame=time.monotonic();frame_index=0
    xyz=np.concatenate([ground,box(15),np.array([[-5.,-2.,0.],[-5.,2.,0.],[-5.,-8.,0.]])]+([box(25)] if two else []))
    if rotated:
     car=box(15,length=4.5)-np.array([15,0,0]);angle=np.deg2rad(45.)
@@ -63,9 +63,13 @@ def main():
       from std_msgs.msg import Float32
       from geometry_msgs.msg import TransformStamped
       quality_pub.publish(Float32(data=.9));epoch_pub.publish(map_header)
-      transform=TransformStamped();transform.header.stamp=ts;transform.header.frame_id='map';transform.child_frame_id='hesai_lidar'
-      transform.transform.rotation.z=np.sqrt(.5);transform.transform.rotation.w=np.sqrt(.5);tf_pub.sendTransform(transform)
-     cloud_pub.publish(cloud);next_frame+=.1;frame_index+=1
+      from rclpy.time import Time
+      from rclpy.duration import Duration
+      # MOLA's map->odom lags the scan by about 0.25 s; odom->lidar follows the INS in real time.
+      correction=TransformStamped();correction.header.stamp=(Time.from_msg(ts)-Duration(seconds=.25)).to_msg();correction.header.frame_id='map';correction.child_frame_id='odom';correction.transform.rotation.w=1.
+      transform=TransformStamped();transform.header.stamp=ts;transform.header.frame_id='odom';transform.child_frame_id='hesai_lidar'
+      transform.transform.rotation.z=np.sqrt(.5);transform.transform.rotation.w=np.sqrt(.5);tf_pub.sendTransform([correction,transform])
+     cloud_pub.publish(cloud);next_frame+=period;frame_index+=1
     rclpy.spin_once(n,timeout_sec=.003)
    return rows[begin:]
   turning=phase(rotated=True)
@@ -123,6 +127,11 @@ def main():
    print('Association pipeline: mapped wall removed, foreground lead retained: PASS')
   stale=phase(send_camera=False);assert stale[-1].status=='no_target' and not stale[-1].candidate_unique
   assert stale[-1].primary_track_id==-1,'camera loss left an unrelated LiDAR primary'
+  phase() # Back to 10 Hz with a camera-supported lead, so the slow phase has something to withhold.
+  slow=phase(period=.5,seconds=4.5) # The 2 Hz sighting: the median interval needs 6 slow scans to flip.
+  assert slow[-1].status=='lidar_rate_low' and slow[-1].primary_track_id==-1,('2 Hz LiDAR kept a primary',slow[-1].status,slow[-1].primary_track_id)
+  assert any(abs(float(row['scan_dt_s'])-.5)<.1 for row in csv.DictReader(open(csv_path)) if row['scan_dt_s']!='nan'),'scan_dt_s not logged'
+  print('2 Hz LiDAR: primary withheld, status lidar_rate_low, scan_dt_s logged: PASS')
   diagnostics=list(csv.DictReader(open(csv_path.replace('.csv','.tracks.csv'))))
   assert diagnostics and all(None not in row for row in diagnostics),'track diagnostics missing/misaligned'
   assert any(row['reason']=='selected' and row['footprint_valid']=='1' and float(row['raw_dy'])>2.6 and float(row['footprint_width_m'])<2.6 for row in diagnostics), 'rotated footprint diagnostics missing'

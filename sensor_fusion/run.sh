@@ -30,7 +30,7 @@ case "$MODE" in
     mkdir -p "$test_out"
     export ROS_LOG_DIR="$test_out/ros_logs"
     ctest --test-dir "${WS}/build/a1_fusion_cpp" --output-on-failure
-    ROS_DOMAIN_ID=93 python3 "${ROOT}/cpp/tests/association_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/association_node"
+    ROS_DOMAIN_ID=93 python3 "${ROOT}/cpp/tests/association_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/association_node" --map-filter
     ROS_DOMAIN_ID=94 python3 "${ROOT}/cpp/tests/primary_p5_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/fusion_node"
     ROS_DOMAIN_ID=95 python3 "${ROOT}/cpp/tests/far_cloud_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/association_node" --config "${ROOT}/cpp/config/association.yaml" --output "$test_out/far_cloud.json"
     ;;
@@ -44,6 +44,15 @@ case "$MODE" in
     audit_args=()
     if [[ "$MODE" == lidar-check ]]; then audit_args+=(--check-lidar); fi
     exec python3 "$WS/tools/topic_audit.py" --lidar-topic "$A1_LIDAR_SOURCE_TOPIC" "${audit_args[@]}" "$@"
+    ;;
+  lidar-rate)
+    # Same domain/topic as lidar-check; measures the rate with a best_effort subscriber (see the tool's header).
+    source "$WS/config/ros.env"
+    export ROS_DOMAIN_ID="$A1_LIDAR_SOURCE_DOMAIN"
+    unset ROS_DISCOVERY_SERVER FASTDDS_DEFAULT_PROFILES_FILE CYCLONEDDS_URI
+    export FASTRTPS_DEFAULT_PROFILES_FILE="${ROOT}/cpp/config/fastdds_large_images.xml"
+    source /opt/ros/humble/setup.bash
+    exec python3 "${ROOT}/cpp/tools/lidar_rate_check.py" --topic "$A1_LIDAR_SOURCE_TOPIC" "$@"
     ;;
   build|build-gpu)
     # Built together with the rest of the workspace (GPU LibTorch, CUDA 11.8).
@@ -94,7 +103,7 @@ case "$MODE" in
     ;;
   verify)
     bash "$0" core
-    A1_P5_CLI="${BUILD}/core/p5_cli" python3 -B -m pytest -p no:cacheprovider -q "${ROOT}/cpp/tests/test_p5_reference.py" "${ROOT}/cpp/tests/test_track_eval.py"
+    A1_P5_CLI="${BUILD}/core/p5_cli" python3 -B -m pytest -p no:cacheprovider -q "${ROOT}/cpp/tests/test_p5_reference.py" "${ROOT}/cpp/tests/test_track_eval.py" "${ROOT}/cpp/tests/test_map_surfaces_check.py" "${ROOT}/cpp/tests/test_lidar_rate_check.py"
     "${BUILD}/core/replay_p5_csv" \
       "${ROOT}/cpp/evidence/lidar_p5_20261008_10hz.csv" \
       "${ROOT}/cpp/evidence/p5_cpp_replay.csv"
@@ -117,6 +126,8 @@ case "$MODE" in
     ROS_DOMAIN_ID=88 python3 "${ROOT}/cpp/tests/camera_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/a2_camera_node" --models "${ROOT}/cpp/models"
     ROS_DOMAIN_ID=89 python3 "${ROOT}/cpp/tests/imu_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/fusion_node"
     ROS_DOMAIN_ID=90 python3 "${ROOT}/cpp/tests/unverified_ego_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/fusion_node"
+    # This smoke refuses domains below 100.
+    ROS_DOMAIN_ID=101 python3 "${ROOT}/cpp/tests/gnss_ego_smoke.py" --binary "${INSTALL}/lib/a1_fusion_cpp/fusion_node"
     ;;
   replay)
     # Re-runs perception on a recorded bag: no sensors, no vehicle output.
@@ -159,6 +170,6 @@ case "$MODE" in
     echo "Replay results: $out"
     ;;
   *)
-    echo 'Usage: bash run.sh lidar-check|topic-audit|core|build|build-gpu|drivers|verify|export|camera|camera-driver-gpu|camera-gpu|benchmark-gpu|association|association-check|fusion|ros-test|target-test|replay|sensor-check|sensor-check-gpu'
+    echo 'Usage: bash run.sh lidar-check|lidar-rate|topic-audit|core|build|build-gpu|drivers|verify|export|camera|camera-driver-gpu|camera-gpu|benchmark-gpu|association|association-check|fusion|ros-test|target-test|replay|sensor-check|sensor-check-gpu'
     ;;
 esac

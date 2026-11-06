@@ -75,6 +75,6 @@ IMU/INS 입력은 0개, P5는 `extrinsics_unverified`로 invalid이며 요청을
 - C++ 카메라 전처리/추론과 Python 동일 영상 A₂ 최대 절대오차 0.
 - 합성 ROS 융합: ego=10, lead=5, relative=-5m/s, request=-3m/s², 입력 소실 invalid.
 - 합성 ROS IMU: 정지 보정 후 1m/s² 적분 결과 0.995m/s, 입력 지연 invalid.
-- 새 폴더의 복사본 777파일, 66,938,864,883bytes SHA-256 일치(`COPY_MANIFEST.json`).
+- 새 폴더의 복사본 777파일, 66,938,864,883bytes SHA-256 일치(`COPY_MANIFEST.json`). 2026-11-06 정정: 이 manifest와 `verify_copies.py`는 삭제했다. 대상 777개 중 631개가 11-04 정리로 없어져 다시 검증할 수 없다. 원본은 git 이력(`86042bb`)에 있다.
 
 숫자 일치, 실제 센서 데이터 수신, 인지 정확도, 실차 제동 성능은 서로 다른 검증이다.

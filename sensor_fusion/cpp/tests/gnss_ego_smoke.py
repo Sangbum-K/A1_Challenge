@@ -35,12 +35,13 @@ def main():
         deadline = time.monotonic() + seconds
         while time.monotonic() < deadline:
             rclpy.spin_once(node, timeout_sec=.005)
-    def frame(aligned=True, child='base_link', age=0., orientation=1., duplicate=False, covariance=.1):
+    def frame(alignment=3, child='base_link', age=0., orientation=1., duplicate=False, covariance=.1):
         ts = node.get_clock().now().to_msg()
         ns = ts.sec * 10**9 + ts.nanosec - round(age * 1e9)
         ts.sec, ts.nanosec = divmod(ns, 10**9)
         status = NavigationSolution49(); status.header.stamp = ts
-        status.status.imu_alignment = 4 if aligned else 2; status.status.gnss = 4
+        # 3 (ALIGNED) is what the vehicle's Applanix reports in A1_localization's recordings.
+        status.status.imu_alignment = alignment; status.status.gnss = 4
         status_pub.publish(status); spin(.015)
         msg = Odometry(); msg.header.stamp = ts; msg.header.frame_id = 'odom'; msg.child_frame_id = child
         msg.pose.pose.orientation.w = orientation
@@ -72,7 +73,9 @@ def main():
         assert math.isclose(good.gap_m, 18.16) and math.isclose(good.relative_speed_mps, -2.6), good
         assert math.isclose(good.x_m, 21.16) and good.ego_speed_mps == 10., good
         assert egos[-1].valid and egos[-1].source == 'gnss_odometry' and math.isnan(egos[-1].longitudinal_acceleration_mps2)
-        for kwargs in ({'aligned':False}, {'child':'ins'}, {'age':1.}, {'age':-.1}, {'orientation':float('nan')}, {'duplicate':True}, {'covariance':-1.}):
+        assert frame(alignment=4).valid, 'FULL_NAV rejected'
+        # GPS_ONLY, DEGRADED and IMU_UNKNOWN are not usable alignments.
+        for kwargs in ({'alignment':0}, {'alignment':2}, {'alignment':5}, {'child':'ins'}, {'age':1.}, {'age':-.1}, {'orientation':float('nan')}, {'duplicate':True}, {'covariance':-1.}):
             bad = frame(**kwargs)
             assert not bad.valid, (kwargs, bad)
         duplicate_pub = node.create_publisher(Odometry, '/test/odom', qos_profile_sensor_data)

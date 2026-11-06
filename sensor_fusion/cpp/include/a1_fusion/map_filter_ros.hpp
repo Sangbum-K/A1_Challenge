@@ -10,13 +10,17 @@
 #include <chrono>
 namespace a1::inspection {
 // A map from the localization launch, a live matching epoch, recent good ICP
-// quality and a timestamped TF are all required before any point is removed.
+// quality and a usable TF (exact odom->lidar, recent map->odom) are all required before any point is removed.
 class MapFilterRos {
  public:
   explicit MapFilterRos(rclcpp::Node& node):node_(node){
    enabled_=node_.declare_parameter("map_filter_enabled",true);
    frame_=node_.declare_parameter<std::string>("map_frame","map");
    if(!enabled_)return;
+   // MOLA publishes map->odom 0.1-0.3 s behind its scan and the INS owns odom->base_link, so the scan time
+   // only exists on the odom side: map->odom is taken at its newest sample, no older than this.
+   odom_frame_=node_.declare_parameter<std::string>("odom_frame","odom");
+   max_correction_age_=node_.declare_parameter("max_map_odom_age_s",.5);
    buffer_=std::make_unique<tf2_ros::Buffer>(node_.get_clock());listener_=std::make_unique<tf2_ros::TransformListener>(*buffer_);
    map_sub_=node_.create_subscription<sensor_msgs::msg::PointCloud2>("/localization/map_surfaces",rclcpp::QoS(1).reliable().transient_local(),[this](sensor_msgs::msg::PointCloud2::ConstSharedPtr m){
     valid_=false;if(m->header.frame_id!=frame_)return;
@@ -41,11 +45,15 @@ class MapFilterRos {
    if(node_.count_publishers("/lidar_odometry/pose_quality")!=1||!std::isfinite(quality_)||quality_<.5||quality_>1||steady()-quality_time_>.3||std::abs(stamp-quality_ros_time_)>.3)return "localization_untrusted";
    if(lidar_frame.empty())return "no_lidar_frame";
    try{
-    const auto tf=buffer_->lookupTransform(frame_,lidar_frame,rclcpp::Time(int64_t(stamp*1e9)),rclcpp::Duration::from_seconds(0));
-    const auto& p=tf.transform.translation;const auto& r=tf.transform.rotation;
-    Eigen::Quaterniond q(r.w,r.x,r.y,r.z);Eigen::Vector3d t(p.x,p.y,p.z);
-    if(!t.allFinite()||!q.coeffs().allFinite()||std::abs(q.norm()-1)>.01)return "invalid_tf";
-    map_from_body_.linear()=q.normalized().toRotationMatrix()*body_from_lidar.transpose();map_from_body_.translation()=t;
+    const rclcpp::Time scan(int64_t(stamp*1e9),node_.get_clock()->get_clock_type()),newest(0,0,node_.get_clock()->get_clock_type());
+    const auto no_wait=rclcpp::Duration::from_seconds(0);
+    Eigen::Isometry3d odom_from_lidar,map_from_odom;
+    const auto at_scan=buffer_->lookupTransform(odom_frame_,lidar_frame,scan,no_wait);
+    const auto correction=buffer_->lookupTransform(frame_,odom_frame_,newest,no_wait);
+    if(!isometry(at_scan,odom_from_lidar)||!isometry(correction,map_from_odom))return "invalid_tf";
+    if(stamp-rclcpp::Time(correction.header.stamp).seconds()>max_correction_age_)return "tf_stale";
+    const Eigen::Isometry3d map_from_lidar=map_from_odom*odom_from_lidar;
+    map_from_body_.linear()=map_from_lidar.linear()*body_from_lidar.transpose();map_from_body_.translation()=map_from_lidar.translation();
    }catch(const tf2::TransformException&){return "tf_unavailable";}
    active_=true;return "active";
   }
@@ -57,8 +65,14 @@ class MapFilterRos {
   bool is_structure(const Eigen::Vector3d& map_point,double range)const{return active_&&surfaces_.is_structure(map_point,range);}
   bool covered(const Eigen::Vector3d& map_point)const{return active_&&surfaces_.covered(map_point);}
  private:
+  static bool isometry(const geometry_msgs::msg::TransformStamped& tf,Eigen::Isometry3d& out){
+   const auto& p=tf.transform.translation;const auto& r=tf.transform.rotation;
+   Eigen::Quaterniond q(r.w,r.x,r.y,r.z);Eigen::Vector3d t(p.x,p.y,p.z);
+   if(!t.allFinite()||!q.coeffs().allFinite()||std::abs(q.norm()-1)>.01)return false;
+   out=Eigen::Isometry3d::Identity();out.linear()=q.normalized().toRotationMatrix();out.translation()=t;return true;
+  }
   static double steady(){return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();}
-  rclcpp::Node& node_;bool enabled_{},valid_{},active_{};std::string frame_;MapSurfaces surfaces_;
+  rclcpp::Node& node_;bool enabled_{},valid_{},active_{};std::string frame_,odom_frame_;double max_correction_age_{.5};MapSurfaces surfaces_;
   int64_t epoch_{-1},beat_epoch_{-2};double beat_time_{-1},quality_time_{-1},quality_ros_time_{-1},quality_{NAN};
   Eigen::Isometry3d map_from_body_=Eigen::Isometry3d::Identity();
   std::unique_ptr<tf2_ros::Buffer> buffer_;std::unique_ptr<tf2_ros::TransformListener> listener_;

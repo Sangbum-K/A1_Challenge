@@ -33,6 +33,8 @@ def test_summary():
     assert out['status_share']['camera_held']==.5
     assert out['map_status_share']['active']==1.
     assert out['dropped_scans']==1
+    assert math.isclose(out['scan_rate']['median_hz'],10.) and out['scan_rate']['gaps_over_0.15s']==0
+    assert math.isclose(out['scan_rate']['longest_gap_s'],.1,abs_tol=1e-9)
     assert out['processing_ms']['p50']==54.5
     assert out['labels']['kept_rate']==1.
     assert math.isclose(out['labels']['wrong_rate'],.6)

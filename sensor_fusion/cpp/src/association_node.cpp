@@ -4,6 +4,7 @@
 #include "a1_fusion/gnss_ego.hpp"
 #include "a1_fusion/map_filter_ros.hpp"
 #include "a1_fusion/raceline.hpp"
+#include "a1_fusion/scan_rate.hpp"
 #include "a1_fusion/tracker.hpp"
 #include "a1_fusion/ui_recorder.hpp"
 #include "a1_fusion_cpp/msg/a2_features.hpp"
@@ -98,6 +99,8 @@ class AssociationNode:public rclcpp::Node {
     selection.switch_hold_s=declare_parameter("target_switch_hold_s",.3);
     selector_=EvidenceSelector(selection);
     camera_silent_s_=selection.camera_silent_s;
+    // Scans, not seconds, drive track confirmation and camera evidence; see scan_rate.hpp.
+    scan_rate_=ScanRate(declare_parameter("scan_rate_warn_hz",7.),declare_parameter("scan_rate_min_hz",4.));
     far_.near_limit=selection.far_keep_range;
     far_.promote=declare_parameter("far_score_promote",3.);
     far_.release=declare_parameter("far_score_release",1.5);
@@ -201,7 +204,7 @@ class AssociationNode:public rclcpp::Node {
   void open_csv(const std::string& csv){
     std::filesystem::create_directories(std::filesystem::path(csv).parent_path());
     csv_.open(csv);if(!csv_)throw std::runtime_error("cannot open association CSV");
-    csv_<<"stamp,status,unique,verified,track,bin_left,bin_right,ground,nonground,tracks,image_dt,a2_dt,processing_ms,candidate_ids,lidar_candidate_ids,ambiguous,primary_id,standby_id,primary_status,track_geometry,range_stage_counts,camera_stamp,camera_regions,camera_probabilities,primary_camera_age_s,map_filter_status,map_ground_removed,map_wall_removed,ego_status,raceline_status,dropped_scans\n";
+    csv_<<"stamp,status,unique,verified,track,bin_left,bin_right,ground,nonground,tracks,image_dt,a2_dt,processing_ms,candidate_ids,lidar_candidate_ids,ambiguous,primary_id,standby_id,primary_status,track_geometry,range_stage_counts,camera_stamp,camera_regions,camera_probabilities,primary_camera_age_s,map_filter_status,map_ground_removed,map_wall_removed,ego_status,raceline_status,dropped_scans,scan_dt_s\n";
     auto detail=std::filesystem::path(csv);detail.replace_extension("tracks.csv");track_csv_.open(detail);if(!track_csv_)throw std::runtime_error("cannot open track diagnostics");
     track_csv_<<"stamp,id,measured,hits,age_s,geometry,reason,raw_x,raw_y,raw_z,raw_dx,raw_dy,raw_dz,points,x,y,z,range_m,vx,vy,var_x,var_y,projectable,u0,v0,u1,v1,camera_score,camera_state,camera_matched,selected,footprint_valid,footprint_length_m,footprint_width_m,footprint_yaw_rad,evidence,world_speed,heading,yaw_rate,weak,guided,rear_visible,near_surface_x,static_ratio,map_static,map_covered,far_score,far_vehicle,path_s,path_n\n";
   }
@@ -251,6 +254,10 @@ class AssociationNode:public rclcpp::Node {
     timing.finish(t);
     if(t<=last_stamp_){reset_targets();images_.clear();a2s_.clear();egos_.clear();last_a2_stamp_=-1;}
     last_stamp_=t;
+    scan_rate_.add(t);
+    const auto rate_state=scan_rate_.state();
+    if(rate_state==ScanRate::State::Slow||rate_state==ScanRate::State::TooSlow)
+      RCLCPP_WARN_THROTTLE(get_logger(),*get_clock(),5000,"LiDAR scans arrive at %.1f Hz; tracking and camera evidence are tuned for 10 Hz (warning below %.0f Hz, no target below %.0f Hz)",scan_rate_.hz(),scan_rate_.warn_hz(),scan_rate_.min_hz());
     if(ego_link_.update(t,egos_.at(t,.5).has_value()))reset_targets();
     tracker_.set_process_scale(ego_link_.compensated()?1.:4.);
     const auto ego_at_scan=pose_at(t);
@@ -414,7 +421,8 @@ class AssociationNode:public rclcpp::Node {
         o.range>val("target_max_range_m")?"outside_target_range":o.range>val("far_entry_range_m")?"far_not_vehicle":
         !o.vehicle_shape?"insufficient_geometry":"camera_evidence_low";
     }
-    const auto selected=selector_.update(t,last_camera_stamp_,observations);
+    auto selected=selector_.update(t,last_camera_stamp_,observations);
+    if(rate_state==ScanRate::State::TooSlow){selected.primary=selected.standby=-1;selected.status="lidar_rate_low";}
     primary_id_=selected.primary;
     if(selected.primary>=0)reasons[selected.primary]="selected";
     if(selected.standby>=0)reasons[selected.standby]="standby";
@@ -472,7 +480,7 @@ class AssociationNode:public rclcpp::Node {
     }
     result.candidate_unique=candidates.size()==1;if(result.candidate_unique)result.candidate_track_id=candidates[0];
     result.verified_match=result.candidate_unique&&!result.association_ambiguous&&result.calibration_verified&&result.clock_verified;
-    result.status=!im?"no_image":!a?"no_a2":!a->history_ready?"a2_history_unready":selected.primary<0?"no_target":selected.status=="camera_held"?"camera_held":!result.calibration_verified?"candidate_extrinsics_unverified":!result.clock_verified?"candidate_clock_unverified":"matched_geometry_only";
+    result.status=rate_state==ScanRate::State::TooSlow?"lidar_rate_low":!im?"no_image":!a?"no_a2":!a->history_ready?"a2_history_unready":selected.primary<0?"no_target":selected.status=="camera_held"?"camera_held":!result.calibration_verified?"candidate_extrinsics_unverified":!result.clock_verified?"candidate_clock_unverified":"matched_geometry_only";
     result.processing_ms=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-start).count();
     assoc_pub_->publish(result);
     write_association_row(result,tracks,stage_counts,map_filter_status,map_ground_removed,map_wall_removed);
@@ -597,7 +605,7 @@ class AssociationNode:public rclcpp::Node {
     csv_<<',';for(size_t i=0;i<stage_counts.size();++i){csv_<<i*10<<'-'<<(i+1)*10<<':';for(int n:stage_counts[i])csv_<<n<<'/';csv_<<';';}
     csv_<<','<<last_camera_stamp_<<',';for(const auto& region:regions_)csv_<<region.left<<':'<<region.right<<':'<<region.peak<<';';
     csv_<<',';for(double q:probabilities_)csv_<<q<<';';
-    csv_<<','<<result.primary_camera_age_s<<','<<map_filter_status<<','<<map_ground_removed<<','<<map_wall_removed<<','<<result.ego_status<<','<<result.raceline_status<<','<<result.dropped_scans<<'\n';csv_.flush();
+    csv_<<','<<result.primary_camera_age_s<<','<<map_filter_status<<','<<map_ground_removed<<','<<map_wall_removed<<','<<result.ego_status<<','<<result.raceline_status<<','<<result.dropped_scans<<','<<scan_rate_.last_interval()<<'\n';csv_.flush();
     if(track_csv_)track_csv_.flush();
   }
   bool render_needed() const {return show_window_||recorder_||!preview_.empty()||image_pub_->get_subscription_count()>0;}
@@ -741,7 +749,7 @@ class AssociationNode:public rclcpp::Node {
   int ego_path_hint_{-1},bin_dilation_{1};double ego_path_s_{},ego_path_n_{};
   std::unique_ptr<patchwork::PatchWorkpp> ground_;double weak_min_range_{40.},camera_silent_s_{2.};
   double last_stamp_{-1},last_preview_{},last_a2_stamp_{-1},last_camera_stamp_{-1};
-  size_t dropped_scans_{};
+  size_t dropped_scans_{};ScanRate scan_rate_;
   std::string preview_;std::ofstream csv_,track_csv_;bool show_window_{},show_debug_{};
   std::deque<Image::ConstSharedPtr> images_;std::deque<A2::ConstSharedPtr> a2s_;
   std::deque<std::pair<std::chrono::steady_clock::time_point,Cloud::ConstSharedPtr>> pending_;

@@ -17,11 +17,32 @@ def digest(path):
     return result.hexdigest()
 
 
+def check(prefix):
+    """Return the surface cache path if it was exported from exactly this map, else raise."""
+    prefix = Path(prefix)
+    if prefix.suffix in ('.mm', '.simplemap'):
+        prefix = prefix.with_suffix('')
+    source = Path(f'{prefix}.mm').resolve(strict=True)
+    cache = source.with_suffix('.surfaces.pcd').resolve(strict=True)
+    metadata = json.loads(source.with_suffix('.surfaces.json').read_text())
+    if digest(source) != metadata['source_sha256']:
+        raise RuntimeError(f'{source.name} changed since its surface cache was exported; re-run without --check')
+    if digest(cache) != metadata['surface_sha256']:
+        raise RuntimeError(f'{cache.name} does not match its manifest')
+    return cache
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('map', type=Path)
-    parser.add_argument('--binary', required=True, type=Path)
+    parser.add_argument('map', type=Path, help='export: the localization .mm; --check: its map:= prefix or .mm')
+    parser.add_argument('--binary', type=Path)
+    parser.add_argument('--check', action='store_true', help='print the verified cache path and exit')
     args = parser.parse_args()
+    if args.check:
+        print(check(args.map))
+        return
+    if args.binary is None:
+        parser.error('--binary is required unless --check is given')
     source = args.map.resolve(strict=True)
     if source.suffix != '.mm':
         parser.error('input must be the exact localization .mm map')
