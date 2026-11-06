@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A1 CHALLENGE — 모델 아키텍처 진화 분석</title>
+<style>
+:root{color-scheme:light dark;--bg:#fff;--fg:#24292f;--border:#d0d7de;--code-bg:#f6f8fa;--bq-fg:#57606a;--bq-bd:#d0d7de;--link:#0969da;--th-bg:#f6f8fa}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#c9d1d9;--border:#30363d;--code-bg:#161b22;--bq-fg:#8b949e;--bq-bd:#30363d;--link:#58a6ff;--th-bg:#161b22}}
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.7;max-width:960px;margin:2em auto;padding:0 1.5em;color:var(--fg);background:var(--bg)}
+h1,h2,h3,h4{line-height:1.3;margin-top:1.8em;margin-bottom:.6em;font-weight:700}
+h1{font-size:2em;border-bottom:2px solid var(--border);padding-bottom:.3em}
+h2{font-size:1.5em;border-bottom:1px solid var(--border);padding-bottom:.25em;margin-top:2.5em}
+h3{font-size:1.2em;margin-top:2em}h4{font-size:1.05em;color:var(--bq-fg)}
+p{margin:.8em 0}a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+code{background:var(--code-bg);padding:.15em .4em;border-radius:4px;font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.9em}
+pre{background:var(--code-bg);padding:1em;border-radius:8px;overflow-x:auto;font-size:.88em;border:1px solid var(--border)}
+pre code{background:transparent;padding:0;border:none}
+blockquote{border-left:4px solid var(--bq-bd);color:var(--bq-fg);margin:1em 0;padding:.5em 1.2em;background:var(--code-bg);border-radius:0 6px 6px 0}
+blockquote p{margin:.4em 0}
+table{border-collapse:collapse;margin:1.2em 0;width:100%;font-size:.95em}
+th,td{border:1px solid var(--border);padding:.5em .9em;text-align:left}
+th{background:var(--th-bg);font-weight:600}tr:nth-child(even){background:var(--code-bg)}
+hr{border:none;border-top:1px solid var(--border);margin:2.5em 0}
+img{max-width:100%;height:auto;border-radius:8px;border:1px solid var(--border);display:block;margin:1em auto;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.mermaid{text-align:center;margin:1.5em 0;overflow-x:auto}
+ul{padding-left:1.5em}li{margin:.3em 0}strong{font-weight:700}
+blockquote pre{margin:.5em 0}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:var(--code-bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+</style></head><body>
+<h1 id="a1-challenge">A1 CHALLENGE 자율주행 대회 — 모델 아키텍처 진화 분석</h1>
+<blockquote>
+<p>9일간(2026-05-19 ~ 05-28)의 회고록을 기반으로, 모델이 어떤 구조로 개발되었는지,<br />
+어떤 설계 결정이 모여 최종 아키텍처에 도달했는지를 처음 보는 사람도 따라갈 수 있게 정리한 문서.</p>
+</blockquote>
+<hr />
+<h2 id="_1">목차</h2>
+<p><strong>1부 — 기초부터 차근차근</strong>
+- <a href="#0-이-문서를-읽기-전에">0. 이 문서를 읽기 전에</a>
+- <a href="#1-대회가-뭔가요">1. 대회가 뭔가요?</a>
+- <a href="#2-ai는-어떻게-운전을-배우나요">2. AI는 어떻게 "운전"을 배우나요?</a>
+- <a href="#3-모델이-받는-것-내는-것">3. 모델이 받는 것, 내는 것</a>
+- <a href="#4-scc--앞차-안-부딪히게-하기">4. SCC — 앞차 안 부딪히게 하기</a>
+- <a href="#5-진짜-시험은-closed-loop다">5. 진짜 시험은 closed loop다</a>
+- <a href="#6-이름-규칙--f-a-i-가-뭔가요">6. 이름 규칙 — f, a, i 가 뭔가요?</a></p>
+<p><strong>2부 — 학습 데이터와 학습 과정</strong>
+- <a href="#7-gt-합성--정답을-누가-만드나요">7. GT 합성 — 정답을 누가 만드나요?</a>
+- <a href="#8-3단계-학습--밑바닥부터-차근차근">8. 3단계 학습 — 밑바닥부터 차근차근</a>
+- <a href="#9-scc-profile--얼마나-보수적으로-운전할까">9. SCC Profile — 얼마나 보수적으로 운전할까?</a></p>
+<p><strong>3부 — 모델 아키텍처 진화</strong>
+- <a href="#10-출발점--글만-보고-운전하는-에이스">10. 출발점 — 글만 보고 운전하는 에이스</a>
+- <a href="#11-첫-시도--한-명이-다-하기-실패">11. 첫 시도 — 한 명이 다 하기 (실패)</a>
+- <a href="#12-524-핵심-전환--역할-분담">12. 5/24 핵심 전환 — 역할 분담</a>
+- <a href="#13-526-하나로-묶기--a1e2emodel">13. 5/26 하나로 묶기 — A1E2EModel</a>
+- <a href="#14-최종-본선-아키텍처">14. 최종 본선 아키텍처</a>
+- <a href="#15-gate--언제-브레이크를-밟을까">15. Gate — 언제 브레이크를 밟을까?</a>
+- <a href="#16-a_2-의-9일-진화">16. a_2 의 9일 진화</a>
+- <a href="#17-핵심-메타-패턴">17. 핵심 메타-패턴</a></p>
+<p><strong>4부 — 9일 일지</strong>
+- <a href="#18-9일-회고-날짜별">18. 9일 회고 (날짜별)</a></p>
+<hr />
+<h1 id="1">1부 — 기초부터 차근차근</h1>
+<h2 id="0">0. 이 문서를 읽기 전에</h2>
+<p>이 문서는 자율주행 AI 대회에 출전한 팀이 9일 동안 모델을 어떻게 만들었는지를 정리한다. AI나 머신러닝을 처음 접하는 사람도 따라갈 수 있도록, 가장 기본적인 개념부터 하나씩 쌓아 올린다.</p>
+<p>처음에는 "AI가 뭘 하는 건지"부터 시작해서, 점점 구체적인 모델 구조로 들어간다. 중간에 <code>f_1</code>, <code>a_2</code>, <code>i_1</code> 같은 영문+숫자 이름이 나오는데 이건 그냥 팀이 모듈에 붙인 이름이지 어려운 개념이 아니다. <strong>§6에서 이 이름들이 뭔지 미리 다 풀어 설명한다</strong> — 거기만 한 번 읽고 오면 뒤가 편하다.</p>
+<hr />
+<h2 id="1_1">1. 대회가 뭔가요?</h2>
+<p><strong>A1 CHALLENGE</strong> 는 자율주행 모델을 <strong>시뮬레이터(가상 세계)에서 실시간으로 운전</strong> 시켜 평가하는 대회다.</p>
+<p>쉽게 말하면 — 컴퓨터 안에 가상 도시를 만들어 두고, 그 안에 가상 차량을 띄운 다음, 우리가 만든 AI가 그 차량을 운전하게 한다. 한 바퀴를 주행하는 동안 <strong>부딪히지 않고 차선을 잘 유지하며 속도를 적절히 내는지</strong> 채점한다.</p>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>시뮬레이터</strong></td>
+<td>MORAI — 한국에서 만든 자율주행 시뮬레이터. 가상 차량/카메라/도로를 제공</td>
+</tr>
+<tr>
+<td><strong>트랙</strong></td>
+<td>상암(도심)과 speedway(직선 위주) 두 종. 각각 난이도 mild/high</td>
+</tr>
+<tr>
+<td><strong>평가</strong></td>
+<td>한 바퀴 주행 — 추돌 회피 / 차선 유지 / 속도 적절성 / 컴퓨터 자원 사용량</td>
+</tr>
+<tr>
+<td><strong>제출물</strong></td>
+<td>학습된 모델 파일(<code>.pt</code>) 1개 + 운영 코드. 한 PC에서 4대 동시 주행</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">대회 규정 — 아키텍처를 제약하는 두 가지</h3>
+<p>대회에는 모델 구조에 직접 영향을 주는 규정 두 개가 있다:</p>
+<ul>
+<li><strong>§1.1</strong>: 모델은 <strong>파일 1개</strong>(<code>.pt</code>)여야 한다. 여러 파일로 쪼개면 안 됨</li>
+<li><strong>§1.3</strong>: 모델은 <strong>하나의 연결된 신경망</strong> 이어야 한다. "if 문으로 분기"나 "파이썬 코드로 후처리" 같은 건 안 됨. 입력→출력이 하나의 흐름 안에서 끝나야 함</li>
+</ul>
+<blockquote>
+<p>이 규정이 나중에 "5개 모듈을 하나로 묶어야 한다"는 강제력으로 작용한다. 뒤에서 다시 나온다.</p>
+</blockquote>
+<hr />
+<h2 id="2-ai">2. AI는 어떻게 "운전"을 배우나요?</h2>
+<h3 id="imitation-learning">핵심 개념: 모방 학습 (Imitation Learning)</h3>
+<p>이 팀이 쓴 방식은 <strong>모방 학습</strong> 이다. 쉽게 말하면:</p>
+<blockquote>
+<p><strong>운전을 잘하는 "선생"의 운전 기록을 보고, AI가 똑같이 따라 하는 것.</strong></p>
+</blockquote>
+<p>사람이 운전을 배울 때 — 시행착오로 직접 부딪혀 보며 배우는 것도 있지만 순서대로 가르쳐주는 사람 옆에서 "이 상황에서는 이렇게 핸들을 돌리고 이렇게 브레이크를 밟는구나"를 보고 따라 하는 게 빠르다. AI도 마찬가지다.</p>
+<p>구체적으로는 이런 과정이다:</p>
+<ol>
+<li><strong>정답(정답 데이터)</strong> 을 만든다 — "이 상황에서는 핸들을 이 각도로 돌리고, 페달을 이 정도 밟아야 한다"는 기록</li>
+<li>AI에게 <strong>상황(입력)</strong> 을 보여주고, <strong>정답(출력)</strong> 을 맞추게 한다</li>
+<li>AI가 정답과 다르게 내면, 그 차이만큼 <strong>스스로 수정</strong> 한다 (이게 "학습")</li>
+<li>이걸 수만 번 반복하면, AI가 정답과 비슷한 행동을 하게 된다</li>
+</ol>
+<h3 id="_3">정답은 누가 만드나요?</h3>
+<p>여기서 중요한 점 — 이 팀은 <strong>사람이 운전한 기록을 쓰지 않았다</strong>. 대신 <strong>규칙으로 짠 프로그램</strong> 이 운전한 기록을 정답으로 썼다.</p>
+<blockquote>
+<p>"앞차가 5m 이내로 가까워지면 브레이크를 밟아라" 같은 규칙(rule)을 코딩해두고,<br />
+그 프로그램이 시뮬레이터에서 운전하는 것을 녹화해서 정답으로 삼는다.</p>
+</blockquote>
+<p>왜 이렇게 하냐면 — 규칙으로 만든 정답이 더 일관되고, "이 상황에서 정확히 얼마나 브레이크를 밟아야 하는지"를 수학적으로 계산할 수 있기 때문이다. 이걸 <strong>GT(Ground Truth, 정답) 합성</strong> 이라고 부른다. 뒤에서 자세히 설명한다.</p>
+<h3 id="_4">"학습"이라는 건 구체적으로 뭘 하는 건가요?</h3>
+<p>AI 모델은 수백만 개의 <strong>숫자(가중치, weight)</strong> 로 이루어져 있다. 학습이란 이 숫자들을 조금씩 수정해서, 입력을 넣었을 때 정답에 가까운 출력이 나오게 만드는 과정이다.</p>
+<ul>
+<li>입력을 넣는다 → AI가 뭔가 출력한다 → 정답과 비교한다 → 차이가 크면 숫자들을 수정한다</li>
+<li>이 한 사이클을 <strong>1 step</strong> 이라 하고 데이터 전체를 한 번 다 보면 <strong>1 epoch</strong> 이라 한다</li>
+<li>보통 수십~수백 epoch을 반복한다</li>
+</ul>
+<p>이때 "숫자들을 수정"하는 것을 <strong>역전파(backward propagation)</strong> 라고 한다 — 출력의 오차가 입력 방향으로 거슬러 올라가면서 각 숫자가 오차에 얼마나 기여했는지 계산하고 기여가 큰 숫자를 더 많이 수정한다. "한 번의 순방향 계산(forward) → 한 번의 역방향 수정(backward)"이 하나의 연결된 흐름이어야 한다는 게 대회 규정 §1.3의 의미다.</p>
+<hr />
+<h2 id="3">3. 모델이 받는 것, 내는 것</h2>
+<p>AI는 <strong>0.05초마다</strong> (초당 20번, 20 Hz) 한 번씩 주변 상황을 살피고 운전 명령을 내린다.</p>
+<pre><code>모델이 받는 것 (입력, 20 Hz)           모델이 내는 것 (출력, 20 Hz)
+──────────────────────────           ──────────────────────────
+camera   전방 카메라 이미지             steer    핸들 각도 (deg)
+ego      내 차의 속도, 회전 속도         pedal    가속/제동 ([-1, +1])
+traj     앞으로 갈 경로 30칸           
+</code></pre>
+<h3 id="_5">입력 하나하나의 의미</h3>
+<p><strong>camera (카메라)</strong> — 전방 카메라 한 대에서 온 이미지. 1280×720 픽셀인데, 그중 운전에 필요한 <strong>중간 띠(horizon strip)</strong> 만 잘라서 쓴다. 위쪽은 하늘이고 아래쪽은 차 앞후드/계기판이라 의미가 없기 때문. 결과적으로 250×1280 크기만 사용 — <strong>계산량을 크게 줄여준다</strong>.</p>
+<blockquote>
+<p>비유: 운전할 때 허공이나 내 계기판을 보지 않고 앞 도로만 보듯이 AI도 "보면 도움되는 영역"만 잘라서 본다.</p>
+</blockquote>
+<p><strong>ego (내 차 정보)</strong> — 내 차이 지금 얼마나 빠르게 달리고 있는지(vx, 속도), 얼마나 빠르게 회전하고 있는지(wz, yaw rate). 이 두 숫자만 쓴다.</p>
+<p><strong>traj (경로)</strong> — "이 길로 가라"라는 미리 정해진 경로. raceline(최적 주행선)이라는 CSV 파일에서, 앞으로 3초 동안 30개 지점의 (x좌표, y좌표, 권장 속도)를 가져온다.</p>
+<blockquote>
+<p><strong>주의할 점</strong>: 경로(traj)는 모델이 <strong>"만드는" 게 아니라 "받는" 것</strong> 이다. 모델이 "어디로 갈지"를 결정하는 게 아니라, 이미 정해진 길을 따라가면서 "얼마나 핸들을 돌리고, 얼마나 속도를 낼지"만 결정한다. 내비게이션이 길을 알려주면 운전자는 그 길을 따라 가듯이.</p>
+</blockquote>
+<h3 id="_6">출력의 의미</h3>
+<p><strong>steer (조향)</strong> — 핸들 각도. 양수=좌회전, 음수=우회전</p>
+<p><strong>pedal (페달)</strong> — <code>+</code>는 가속(throttle), <code>−</code>는 제동(brake). 이 값을 차량의 물리 모델에 넣으면 실제 가속도(m/s²)로 변환된다.</p>
+<h3 id="1_2">왜 카메라를 1대만 쓰나요?</h3>
+<p>대회 시뮬레이터는 5대 카메라(전방, 좌후, 우후, 좌측, 우측)를 다 제공한다. 하지만 다 쓰면 모델이 무거워지고 느려진다. 이 팀에게 필요한 건 <strong>"앞차가 있는지, 얼마나 떨어져 있는지, 다가오는지"</strong> — 그래서 <strong>전방 1대만</strong> 쓴다. 한 PC에서 4대를 동시에 돌려야 하는 본선 환경에서 GPU가 버티려면 이런 선택이 필수다.</p>
+<hr />
+<h2 id="4-scc">4. SCC — 앞차 안 부딪히게 하기</h2>
+<h3 id="scc">SCC가 뭔가요?</h3>
+<p><strong>SCC(Smart Cruise Control, 스마트 크루즈 컨트롤)</strong> 는 앞차(lead vehicle)와의 거리와 상대속도를 보고 자동으로 가속/제동을 조절하는 기능이다.</p>
+<blockquote>
+<p><strong>앞차가 가까워지면 브레이크를 밟고, 없거나 멀면 그냥 정해진 속도로 달린다.</strong></p>
+</blockquote>
+<p>요즘 자동차에 있는 "어댑티브 크루즈 컨트롤"과 같은 기능이다. 고속도로에서 앞차와 거리를 유지하면서 알아서 속도를 조절하는 그것.</p>
+<h3 id="_7">왜 이게 대회의 핵심인가요?</h3>
+<p>이 팀에게는 <strong>이미 잘 달리는 모델</strong> 이 있었다 (뒤에서 자세히 설명). 정해진 경로를 따라 부드럽게 달리는 건 잘했다. 문제는 — <strong>앞에 차가 있어도 못 보고 그냥 들이받는다</strong> 는 것. 대회 평가에서 추돌 회피는 필수 항목이다. 그래서 "이 잘 달리는 모델에 SCC만 추가하자"가 이 프로젝트의 출발점이 됐다.</p>
+<h3 id="scc_1">SCC에 필요한 정보들</h3>
+<p>SCC가 제대로 작동하려면 모델이 앞차의 이런 정보를 알아야 한다:</p>
+<table>
+<thead>
+<tr>
+<th>정보</th>
+<th>설명</th>
+<th>비유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>lead presence</strong></td>
+<td>앞차가 내 차선에 있는지 없는지</td>
+<td>"앞에 차 있어?"</td>
+</tr>
+<tr>
+<td><strong>거리</strong></td>
+<td>앞차와의 거리 (m)</td>
+<td>"얼마나 떨어져 있어?"</td>
+</tr>
+<tr>
+<td><strong>vL_rel (상대속도)</strong></td>
+<td><code>앞차 속도 - 내 차 속도</code>. 음수면 가까워지고 있음(closing), 양수면 멀어지고 있음</td>
+<td>"앞차가 다가오고 있어? 멀어지고 있어?"</td>
+</tr>
+<tr>
+<td><strong>TTC (충돌까지 시간)</strong></td>
+<td>거리 / 상대속도. 작을수록 위급</td>
+<td>"지금 속도면 몇 초 뒤에 부딪혀?"</td>
+</tr>
+</tbody>
+</table>
+<p>이 정보들을 카메라 이미지에서 뽑아내는 게 이 프로젝트의 핵심 기술 중 하나다.</p>
+<hr />
+<h2 id="5-closed-loop">5. 진짜 시험은 closed loop다</h2>
+<h3 id="open-loop-vs-closed-loop">open loop vs closed loop</h3>
+<p>AI 모델을 평가하는 데는 두 가지 방식이 있다:</p>
+<p><strong>open loop</strong> — 학습/검증할 때 쓰는 방식</p>
+<blockquote>
+<p>한 장면(입력)을 보여주고, AI가 뭐라고 답하는지(출력)를 정답과 비교한다.<br />
+마치 시험지를 풀고 채점하는 것. 빠르고 간단하다.</p>
+</blockquote>
+<p><strong>closed loop</strong> — 실제 평가할 때 쓰는 방식</p>
+<blockquote>
+<p>시뮬레이터에 AI를 띄우고, 실시간으로 0.05초마다 운전 명령을 내린다.<br />
+<strong>AI가 이번에 내린 명령이 다음 장면에 영향을 준다</strong> — 핸들을 돌리면 차가 돌아가고, 그러면 카메라에 보이는 화면이 바뀐다.</p>
+</blockquote>
+<h3 id="closed-loop">왜 closed loop가 무서운가요?</h3>
+<p>closed loop에서는 <strong>한 번의 실수가 연쇄적으로 퍼진다</strong> (cascading):</p>
+<ul>
+<li>AI가 0.05초 동안 이상한 페달 값을 내뱉음</li>
+<li>→ 차가 갑자기 급정거함</li>
+<li>→ 다음 화면이 이상해짐 (차가 멈춰 있으니까)</li>
+<li>→ AI가 또 이상한 값을 내뱉음</li>
+<li>→ 계속 무너짐</li>
+</ul>
+<blockquote>
+<p>비유: 시험지를 풀 때는 한 문제를 틀려도 다음 문제는 안 바뀐다 (open loop). 하지만 실제 운전에서는 핸들을 잘못 돌리면 차가 도로를 벗어나고, 그러면 다음 순간의 상황이 완전히 달라진다 (closed loop).</p>
+</blockquote>
+<p><strong>대회 채점은 closed loop로 한다.</strong> 그래서 학습 점수(open loop)가 아무리 좋아도 closed loop에서 한 번 삐끗하면 의미가 없다. 이 팀이 9일 동안 겪은 많은 사고가 바로 "학습은 잘 됐는데 실제 운전시키니까 이상하다"는 패턴이었다.</p>
+<hr />
+<h2 id="6-f-a-i">6. 이름 규칙 — f, a, i 가 뭔가요?</h2>
+<p>뒤에 나올 아키텍처에서 <code>f_1</code>, <code>f_2</code>, <code>a_2</code>, <code>a_2_aux</code>, <code>i_1</code>, <code>i_2</code> 같은 이름이 계속 나온다. 겁먹을 필요 없다 — 이건 팀이 모듈과 데이터에 붙인 <strong>별명</strong> 이다. 한 번 정리하고 가면 뒤가 훨씬 편하다.</p>
+<h3 id="_8">세 가지 알파벳의 의미</h3>
+<p>팀은 모듈과 데이터를 <strong>세 가지 알파벳</strong> 으로 나누었다:</p>
+<table>
+<thead>
+<tr>
+<th>알파벳</th>
+<th>의미</th>
+<th>비유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>f</strong></td>
+<td><strong>function</strong> — 최종 출력을 만드는 메인 모듈</td>
+<td>"요리사" — 재료를 받아 완성된 요리를 내놓는 사람</td>
+</tr>
+<tr>
+<td><strong>a</strong></td>
+<td><strong>attention/auxiliary</strong> — 중간 처리를 담당하는 모듈</td>
+<td>"조리 보조" — 재료를 손질하고 합치는 사람</td>
+</tr>
+<tr>
+<td><strong>i</strong></td>
+<td><strong>intermediate</strong> — 모듈 사이를 흐르는 중간 데이터</td>
+<td>"준비된 재료" — 조리 보조가 손질해서 요리사에게 건네는 것</td>
+</tr>
+</tbody>
+</table>
+<h3 id="f">f — 최종 출력을 만드는 모듈</h3>
+<table>
+<thead>
+<tr>
+<th>이름</th>
+<th>역할</th>
+<th>비유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>f_1</strong> (main)</td>
+<td>경로 + 내 차 정보만 보고, 핸들 각도와 <strong>기본 페달</strong> 을 결정</td>
+<td>"메인 요리사" — 레시피(경로)를 보고 기본 요리를 만드는 사람. <strong>이 사람은 눈으로 재료를 보지 않고, 레시피 글만 읽고 요리한다</strong> (text-only). 이미 검증된 실력자라 <strong>가르치지 않는다 (frozen)</strong></td>
+</tr>
+<tr>
+<td><strong>f_2</strong> (side)</td>
+<td>카메라 정보를 보고, 앞차가 가까우면 <strong>브레이크 보정치(delta)</strong> 만 계산</td>
+<td>"보조 요리사" — 메인이 만든 요리에, 눈으로 재료 상태를 보면서 "조금 덜 익혀야겠다" 하고 마지막 보정만 한다</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>핵심: f_1이 "기본 운전"을 하고, f_2가 "앞차 안 부딪히게 브레이크 보정"만 추가한다.<br />
+f_1은 건드리지 않고(frozen), f_2만 학습시킨다.</p>
+</blockquote>
+<h3 id="a">a — 중간 처리를 담당하는 모듈</h3>
+<table>
+<thead>
+<tr>
+<th>이름</th>
+<th>역할</th>
+<th>비유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>seg backbone</strong></td>
+<td>카메라 이미지를 보고, "차선이 어디 있고, 차가 어디 있다"는 식으로 이해하는 첫 단계. EfficientNetV2라는 유명한 이미지 인식 모델 + SAM이라는 분할 모델로 학습. 학습할 때 GroundingDINO(텍스트로 객체를 찾는 탐지 모델)가 "car"라고 박스를 그려주면, SAM이 그 박스 안의 픽셀을 정확히 분할(mask)해서 가르침</td>
+<td>"사진을 보고 뭐가 뭔지 파악하는 눈"</td>
+</tr>
+<tr>
+<td><strong>a_2</strong></td>
+<td>두 장의 이미지(현재 + 이전)를 합쳐서, 시간에 따른 변화까지 포함한 "이미지 기억"을 만드는 모듈</td>
+<td>"사진 2장을 비교해서 뭐가 움직였는지 파악하는 사람"</td>
+</tr>
+<tr>
+<td><strong>a_2_aux</strong></td>
+<td>a_2가 만든 "이미지 기억"에서, <strong>앞차가 있는지, 거리가 얼마인지, 다가오는지</strong> 를 7개 숫자로 뽑아내는 보조 머리(aux head). 이 숫자들 중 "앞차 있음?" 점수를 <strong>logit (로짓)</strong> 이라고 부른다 — 0~1 사이의 확률로 바꾸기 전의 날것 점수. gate가 이 logit을 보고 브레이크를 켤지 말지 결정한다</td>
+<td>"조사관" — 사진을 보고 "앞에 차 있음, 거리 15m, 다가오는 중"을 보고서로 정리하는 사람</td>
+</tr>
+</tbody>
+</table>
+<h3 id="i">i — 모듈 사이를 흐르는 중간 데이터</h3>
+<table>
+<thead>
+<tr>
+<th>이름</th>
+<th>무엇</th>
+<th>비유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>i_1</strong></td>
+<td>seg backbone이 이미지를 처리한 결과물 (40개 토큰). "이미지를 요약한 벡터" — 원본 이미지의 핵심 정보만 압축해둔 <strong>latent (잠재 표현)</strong></td>
+<td>"사진을 보고 만든 메모" — 매번 사진을 다시 볼 필요 없이, 이 메모만 보면 됨</td>
+</tr>
+<tr>
+<td><strong>i_2</strong></td>
+<td>a_2가 현재+이전 i_1을 합쳐서 만든 "융합된 이미지 기억"</td>
+<td>"두 장 메모를 비교해서 만든 종합 보고서"</td>
+</tr>
+<tr>
+<td><strong>i_g</strong></td>
+<td>"이미지 정보를 얼마나 신뢰할 만한가?" 하는 신뢰도 점수</td>
+<td>"이 사진이 선명한지 흐린지 판단한 점수"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="f-a-i">모듈(f, a)과 피쳐(i)를 왜 구분해서 부르나요?</h3>
+<ul>
+<li><strong>모듈</strong>(f, a)은 학습/얼리기(freeze)/저장(ckpt)의 단위다 — "이 모듈의 숫자들을 수정할까, 말까?"를 결정한다</li>
+<li><strong>피쳐</strong>(i)는 저장(cache)의 단위다 — "이 중간 데이터를 미리 만들어둘까, 매번 새로 만들까?"를 결정한다</li>
+</ul>
+<p>이 구분이 중요한 이유는, 9일 중 가장 뼈아픈 사고들이 <strong>"모듈의 숫자는 같은데, 모듈 사이를 흐르는 데이터(i_2)가 학습할 때와 실제 운전할 때 다르게 만들어지는"</strong> 문제였기 때문이다. 같은 모듈인데 데이터가 다르니, 똑같은 사진을 넣어도 다른 결과가 나온다. 이걸 <strong>i2_mem mismatch</strong> 라고 부른다 — 뒤에서 다시 나온다.</p>
+<h3 id="token-attention-transformer">핵심 개념: token, attention, transformer</h3>
+<p>지금까지 모듈 이름과 역할을 정리했다. 여기서부터는 다이어그램에 등장하는 <strong>token</strong>, <strong>self-attn</strong>, <strong>cross-attn</strong>, <strong>transformer</strong> 가 뭔지를 풀어 설명한다. 이 개념들을 알고 나면 뒤에 나오는 모든 아키텍처 다이어그램이 읽힌다.</p>
+<h4 id="token">token — 정보의 최소 단위</h4>
+<p>모델은 이미지나 경로를 통째로 한 번에 처리하지 않는다. 작은 조각으로 나눠서 처리한다. 이 조각 하나하나를 <strong>token</strong> 이라고 부른다. 각 토큰은 여러 숫자로 이루어진 작은 배열(<strong>tensor</strong>, 텐서)이다 — 이미지의 한 조각이면 그 조각의 색상/질감 정보가 담긴 숫자들이고, 경로의 한 지점이면 (x, y, 속도) 세 숫자가 담긴다.</p>
+<blockquote>
+<p>비유: 요리사가 재료를 통째로 다루지 않고 먼저 잘게 썰어서 준비해두듯이, 모델도 데이터를 토큰 단위로 쪼개서 다룬다.</p>
+</blockquote>
+<p>이 모델에서 나오는 토큰들:</p>
+<table>
+<thead>
+<tr>
+<th>토큰</th>
+<th>개수</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>i_1 토큰</strong></td>
+<td>40개</td>
+<td>이미지를 가로 방향으로 40등분한 요약. 각 토큰이 이미지의 한 조각을 담당</td>
+</tr>
+<tr>
+<td><strong>traj 토큰</strong></td>
+<td>30개</td>
+<td>경로의 30 step. 각 토큰이 "0.1초 뒤에 (x, y) 위치에서 v 속도로 가라"는 정보</td>
+</tr>
+<tr>
+<td><strong>ego 토큰</strong></td>
+<td>1개</td>
+<td>내 차 속도(vx)와 회전 속도(wz). 이걸 <strong>traj의 첫 번째 토큰에 끼워넣는다(prepend)</strong></td>
+</tr>
+</tbody>
+</table>
+<h4 id="ego">ego를 첫 토큰에 끼워넣는 이유</h4>
+<p>5/19 설계 합의의 핵심 결정 중 하나. 원래는 ego 정보를 모든 처리가 끝난 뒤에 더하려 했다. 그런데 그러면 ego가 다른 토큰들과 "대화"할 기회가 없다.</p>
+<p>ego를 <strong>traj의 첫 번째 토큰에 끼워넣고 나서 self-attention을 돌리면</strong>, "내가 지금 어떤 자세인지"가 30개 토큰 전체로 퍼진다. 속도가 빠르면 경로의 모든 지점이 그 속도를 감안하고, 회전 중이면 모든 지점이 그 회전을 감안한다.</p>
+<blockquote>
+<p>비유: 요리사가 "오늘 불이 세다"는 정보를 맨 마지막에 알려주는 것보다, 처음부터 알려주면 모든 요리 과정에서 불 세기를 감안하게 되는 것과 같다.</p>
+</blockquote>
+<h4 id="self-attention">self-attention — 같은 그룹 안에서 정보 교환</h4>
+<p><strong>self-attention</strong> 은 같은 출처의 토큰들끼리 서로 정보를 주고받는 메커니즘이다. 모든 토큰이 다른 모든 토큰을 "살펴보고" 자기에게 필요한 정보를 끌어온다.</p>
+<blockquote>
+<p>비유: 요리사가 모든 재료를 탁자에 펼쳐놓고, 각 재료가 다른 재료와 어떤 관계인지 살펴보면서 요리 계획을 세우는 것.</p>
+</blockquote>
+<p>이 모델에서 self-attention이 쓰이는 곳:</p>
+<ul>
+<li><strong>a_2</strong> — 현재 이미지의 40 토큰 + 이전 이미지의 40 토큰을 같이 놓고 self-attention → 두 시점을 비교해서 "뭐가 움직였는지" 파악. 이게 "이미지 합치기(fusion)"의 실제 방식이다</li>
+<li><strong>f_1 (controller_imitator)</strong> — traj 30 토큰 + ego(첫 토큰에 끼워넣음)를 self-attention → 경로의 각 지점이 다른 지점과 내 차 상태를 감안해서 핸들/페달 결정</li>
+</ul>
+<h4 id="cross-attention">cross-attention — 다른 그룹에서 정보 가져오기</h4>
+<p><strong>cross-attention</strong> 은 한 그룹의 토큰이 다른 그룹의 토큰에서 필요한 정보를 끌어오는 메커니즘이다. "질문(query)" 쪽과 "답(key/value)" 쪽이 따로 있다.</p>
+<blockquote>
+<p>비유: 요리사가 레시피(질문)를 보면서, 동시에 재료 사진(답)을 확인해서 "이 요리 단계에서 재료 상태가 어떤가?"를 사진에서 찾아오는 것.</p>
+</blockquote>
+<p>이 모델에서 cross-attention이 쓰이는 곳:</p>
+<ul>
+<li><strong>f_2 (side)</strong> — 경로 정보(질문)에 이미지 기억 i_2(답)를 대조. "이 경로 위치에서 앞차가 가까운가?"를 이미지에서 찾아옴. 다이어그램에 <strong>cross-attn(i_2)</strong> 라고 표시된 부분이 바로 이것이다</li>
+</ul>
+<h4 id="transformer-attention">transformer — attention을 층으로 쌓은 구조</h4>
+<p><strong>transformer</strong> 는 self-attention과 cross-attention을 여러 층(layer)으로 쌓아서 만든 모델 구조다. 한 층에서 정보 교환을 하고, 그 결과를 다음 층으로 넘기고, 또 정보 교환을 하고...를 반복해서 점점 더 정교한 이해를 만든다.</p>
+<blockquote>
+<p>비유: 여러 명의 요리사가 줄줄이 서서, 첫 번째가 재료를 대충 분류하고, 두 번째가 더 세밀하게 나누고, 세 번째가 최종 판단을 하는 것. 층이 깊을수록 더 정교한 이해가 된다.</p>
+</blockquote>
+<p>이 프로젝트에서 transformer가 나오는 곳:</p>
+<table>
+<thead>
+<tr>
+<th>모델</th>
+<th>구조</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>controller_imitator</strong> (f_1 원본)</td>
+<td>text-only transformer</td>
+<td>경로 + ego 토큰만 받아서 self-attention 층들을 통과시켜 핸들 + 페달 출력. 카메라를 안 봄</td>
+</tr>
+<tr>
+<td><strong>첫 시도 모델</strong> (v6~v18, 실패)</td>
+<td>concat + SelfAttn</td>
+<td>이미지 + 경로 + ego를 한 번에 이어 붙이고(concat) self-attention → 이미지 노이즈가 경로 처리를 흔듦</td>
+</tr>
+<tr>
+<td><strong>5/24 이후</strong></td>
+<td>f_1 frozen + f_2 cross-attn</td>
+<td>f_1은 text-only transformer 그대로(frozen), f_2는 cross-attn으로 이미지 정보만 가져옴</td>
+</tr>
+</tbody>
+</table>
+<h4 id="yaw-token-shift">Δyaw token shift — 이전 이미지를 현재 기준으로 맞추기</h4>
+<p>a_2가 현재 + 이전 이미지를 합칠 때, 이전 이미지는 <strong>내 차가 회전한 만큼(Δyaw) 가로로 밀어서</strong> 현재 기준으로 맞춘다. 이렇게 하면 encoder를 다시 돌릴 필요 없이, 저장된 i_1 토큰을 가로로 shift만 하면 된다 — 이게 i_1 cache가 가능한 핵심 이유다.</p>
+<blockquote>
+<p>비유: 어제 찍은 사진과 오늘 사진을 비교하려면, 어제 사진을 내가 선 자리로 살짝 돌려서 맞춰놓고 비교하는 것. 매번 새로 찍을 필요 없이 저장된 사진을 살짝 돌리기만 하면 된다.</p>
+</blockquote>
+<h3 id="_9">전체 그림으로 한 번에 보기</h3>
+<div class="mermaid">
+flowchart LR
+    subgraph 입력
+        CAM["📷 카메라"]
+        TRAJ["🗺️ 경로 (traj)"]
+        EGO["🚗 내 차 정보 (ego)"]
+    end
+    
+    CAM --> SEG["seg backbone<br/>(이미지 이해)"]
+    SEG --> I1["i_1<br/>(이미지 요약, 40 토큰)"]
+    I1 --> A2["a_2<br/>(self-attn으로 합치기)"]
+    A2 --> I2["i_2<br/>(이미지 기억)"]
+    I2 --> AUX["a_2_aux<br/>(앞차 정보 추출)"]
+    AUX --> AUXOUT["앞차 있음? 거리? 속도?"]
+    
+    I2 --> F2
+    AUXOUT --> F2["f_2 (보조)<br/>cross-attn(i_2)<br/>브레이크 보정치 계산"]
+    F2 --> DELTA["delta<br/>(브레이크 보정)"]
+    
+    AUXOUT --> GATE["gate<br/>(브레이크 켜기/끄기)"]
+    GATE --> G["g<br/>(0~2 점수)"]
+    
+    TRAJ --> F1["f_1 (메인, frozen)<br/>핸들 + 기본 페달"]
+    EGO --> F1
+    F1 --> BASE["base_pedal<br/>(기본 페달)"]
+    F1 --> STEER["steer<br/>(핸들)"]
+    
+    BASE --> FINAL["최종 페달<br/>= base + g × delta"]
+    DELTA --> FINAL
+    G --> FINAL
+    
+    style F1 fill:#e8f5e9
+    style F2 fill:#e3f2fd
+    style GATE fill:#fff9c4
+    style A2 fill:#f3e5f5
+    style AUX fill:#f3e5f5
+
+</div>
+<p>이 그림이 <strong>이 문서 전체의 핵심</strong> 이다. 뒤에서 이 구조가 어떻게 만들어졌는지를 단계별로 설명한다. 지금은 "아, 이런 식으로 이름을 붙였구나" 정도만 알면 된다.</p>
+<p><img alt="composite sample — image / seg / a_2 / target 4-panel" src="../../99_assets/composite_4panel.png" /></p>
+<blockquote>
+<p>모델이 한 프레임에서 처리하는 4단계. 왼쪽 위 = 원본 카메라 이미지 (horizon strip). 오른쪽 위 = seg backbone이 이해한 결과 — 차선과 차량을 색으로 구분. 왼쪽 아래 = a_2_aux가 뽑아낸 앞차 정보 — 빨간 박스로 in-lane lead를 표시. 오른쪽 아래 = 정답(GT) 제어 명령 — 30 step waypoint와 페달 값. 위에서 아래로 "본다 → 이해한다 → 앞차를 찾는다 → 운전한다"의 흐름.</p>
+</blockquote>
+<hr />
+<h1 id="2">2부 — 학습 데이터와 학습 과정</h1>
+<h2 id="7-gt">7. GT 합성 — 정답을 누가 만드나요?</h2>
+<h3 id="gt">정답(GT)이 뭔가요?</h3>
+<p>앞서 §2에서 "정답을 보고 따라 한다"고 했다. 이 정답을 <strong>GT(Ground Truth)</strong> 라고 부른다. 이 팀은 사람이 운전한 게 아니라, <strong>규칙으로 짠 프로그램</strong> 이 만든 운전 기록을 GT로 삼았다.</p>
+<h3 id="_10">정답이 만들어지는 과정</h3>
+<div class="mermaid">
+flowchart TD
+    A["📦 원본 데이터<br/>(시뮬레이터/실차 주행 기록)"] --> B["프레임 분할<br/>매 순간마다:<br/>내 차 상태, 주변 차량, 차선"]
+    B --> C["SCC 재계획<br/>(scc_replanner)"]
+    
+    C --> C1["내 차선 안에<br/>앞차가 있는지 검출<br/>(Frenet 좌표)"]
+    C --> C2["앞차가 있으면<br/>속도를 재조정:<br/>거리 유지 + 안전 거리"]
+    C1 --> D
+    C2 --> D
+    
+    D["재조정된 경로"] --> E["MPC 최적화<br/>(HPIPM LMPC)"]
+    
+    E --> E1["가속도 한계: ±20 m/s²<br/>급가속 한계: ±100 m/s³"]
+    E --> E2["매번 초기화 + 5번 예비 계산<br/>(cascading 실패 방지)"]
+    E1 --> F
+    E2 --> F
+    
+    F["✅ 정답 (GT)<br/>steer, 가속도, 페달"]
+    
+    style A fill:#e8f5e9
+    style F fill:#fff3e0
+    style C fill:#e3f2fd
+    style E fill:#fce4ec
+
+</div>
+<h3 id="_11">쉽게 풀어서 설명</h3>
+<ol>
+<li>
+<p><strong>원본 데이터</strong> — 시뮬레이터나 실제 차량이 주행하면서 녹화한 데이터. 매 순간의 "내 차 위치, 주변 차량 위치, 차선 정보"가 들어있다.</p>
+</li>
+<li>
+<p><strong>SCC 재계획 (scc_replanner)</strong> — 원본 경로를 보고 앞차가 내 차선에 있으면 속도를 재조정한다. 여기서 <strong>Frenet 좌표</strong> 라는 게 나오는데 어려운 게 아니다 — 경로를 따라간 거리(s)와 경로에서 옆으로 떨어진 거리(n)로 위치를 표현하는 방식이다. "앞차가 내 차선 안에 있나?"가 <code>|n| ≤ 차선 절반 폭</code> 한 줄로 판정된다.</p>
+</li>
+<li>
+<p><strong>MPC 최적화</strong> — 재조정된 경로를 물리적으로 실현 가능한 가속도/브레이크 명령으로 바꾼다. MPC(Model Predictive Control)는 "앞으로 몇 초 동안 어떻게 운전하면 가장 부드럽게 목표를 달성할까"를 수학적으로 푸는 기법이다.</p>
+</li>
+</ol>
+<h3 id="_12">중요한 설계 결정들</h3>
+<ul>
+<li><strong>기존 코드를 버리고 새로 짰다</strong> (5/19) — 이전에 쓰던 acados 기반 MPC를 버리고, HPIPM 기반 LMPC로 처음부터 다시 짰다. "기존 코드 재활용"의 유혹은 거의 항상 비싸다</li>
+<li><strong>제약(constraint)을 느슨하게</strong> — 정답을 만들 때의 가속도/급가속 한계를 실제 운전 때의 한계보다 <strong>느슨하게</strong> 잡았다. 빡빡하게 잡으면 급정거해야 하는 상황에서 "수학적으로 풀 수 있는 답"이 없어지고, 그러면 그 상황의 정답이 빠진다. 정답이 빠지면 AI가 그 상황을 못 배운다</li>
+<li><strong>매번 초기화</strong> — 최적화 도구가 한 번 실패하면 그 상태를 다음 번에도 들고 가서 연쇄 실패가 난다. 매번 초기화하고 5번 예비 계산을 돌려서 이걸 막았다. 실패율이 한 자리 수 %에서 거의 0%로 떨어졌다</li>
+</ul>
+<h3 id="8">신규 데이터가 합류할 때 — 8단계 가공</h3>
+<p>새로운 주행 데이터가 학습에 들어가려면 8단계를 거쳐야 한다:</p>
+<div class="mermaid">
+flowchart LR
+    S1["1. 원본 복사 +<br/>무결성 검증"] --> S2["2. 목록 생성<br/>(어떤 프레임들이 있는지)"]
+    S2 --> S3["3. 앞차 정보 추출 +<br/>품질 검증"]
+    S3 --> S4["4. 내 차선 앞차 판정 +<br/>데이터 일치 확인"]
+    S4 --> S5["5. i_1 미리 계산<br/>(이미지 → 요약 벡터)"]
+    S5 --> S6["6. 학습용 데이터 +<br/>페달 정답 생성"]
+    S6 --> S7["7. 전수 검증<br/>(모든 데이터가 1:1로 맞는지)"]
+    S7 --> S8["8. i_2 미리 계산<br/>(이미지 기억 생성)"]
+    
+    style S1 fill:#e8f5e9
+    style S8 fill:#fff3e0
+
+</div>
+<hr />
+<h2 id="8-3">8. 3단계 학습 — 밑바닥부터 차근차근</h2>
+<p>모델은 한 번에 다 학습하지 않고 <strong>3단계</strong> 로 나누어 학습한다. 마치 요리사를 키우는 것과 같다 — 먼저 재료를 알고 그 다음 재료를 손질하며 마지막에 요리를 한다.</p>
+<div class="mermaid">
+flowchart TD
+    subgraph Stage1["1단계 — 이미지 이해 학습 (seg pretrain)"]
+        S1A["📷 이미지"] --> S1B["EfficientNetV2<br/>(이미지 인식 모델)"]
+        S1B --> S1C["SAM 분할 모델로<br/>차량/차선 영역 가르치기"]
+        S1B --> S1D["✅ backbone 학습됨<br/>이제 사진을 보면 뭐가 뭔지 안다"]
+    end
+    
+    S1D --> Stage2
+    
+    subgraph Stage2["2단계 — 이미지 합치기 + 앞차 인지 학습 (a_2 + a_2_aux)"]
+        S2A["현재 이미지 →<br/>1단계 모델(frozen)"] --> S2B["i_1 (현재 요약)"]
+        S2C["이전 이미지 →<br/>1단계 모델(frozen)"] --> S2D["i_1 (이전 요약)"]
+        S2B --> S2E["a_2<br/>self-attn으로 두 요약을 합침"]
+        S2D --> S2E
+        S2E --> S2F["i_2 (융합된 기억)"]
+        S2F --> S2G["a_2_aux<br/>앞차 정보 7개 숫자 추출"]
+        S2G --> S2H["앞차 있음? 거리?<br/>다가오는 속도? 옆칸?"]
+    end
+    
+    S2F --> Stage3
+    S2H --> Stage3
+    
+    subgraph Stage3["3단계 — 운전 명령 학습 (f_1 / f_2)"]
+        S3A["경로 + 내 차 정보"] --> S3B["f_1 (메인, FROZEN)<br/>self-attn (text-only transformer)<br/>→ 핸들 + 기본 페달"]
+        S3C["i_2 + 앞차 정보 + TTC"] --> S3D["f_2 (보조)<br/>cross-attn(i_2)<br/>→ 브레이크 보정치"]
+    end
+    
+    style Stage1 fill:#e8f5e9
+    style Stage2 fill:#e3f2fd
+    style Stage3 fill:#fce4ec
+
+</div>
+<h3 id="_13">각 단계 설명</h3>
+<p><strong>1단계 — 이미지 이해</strong>: EfficientNetV2(Google이 만든 이미지 인식 모델)에 SAM(Segment Anything Model)의 분할 결과를 가르쳐서, 사진을 보면 "여기가 차선, 저기가 차"를 알게 한다. 1단계가 끝나면 backbone(이미지를 이해하는 부분)의 숫자들은 고정한다(frozen).</p>
+<p><img alt="seg pretrain epoch 진행" src="../../99_assets/seg_pretrain_progress.png" /></p>
+<blockquote>
+<p>1단계 학습 결과 샘플. seg backbone이 학습한 차량(적색 계열)과 차선(청색 계열) segmentation을 여러 장면에 overlay한 모습. 이 결과가 i_1(이미지 요약)의 기반 — 2단계에서 이 요약을 바탕으로 앞차를 찾는다.</p>
+</blockquote>
+<p><strong>2단계 — 이미지 합치기 + 앞차 인지</strong>: 1단계에서 만든 이미지 요약(i_1) 두 개(현재+이전)를 a_2가 합쳐서 i_2를 만든다. 그 위에 a_2_aux가 얹혀서 "앞차가 있나, 거리가 얼마나, 다가오나"를 7개 숫자로 뽑아낸다.</p>
+<p><strong>3단계 — 운전 명령</strong>: f_1은 이미 학습된 모델(Professor #654)을 그대로 쓴다(frozen). f_2만 새로 학습한다 — i_2와 앞차 정보를 보고 브레이크 보정치(delta)를 계산하는 법을 배운다.</p>
+<h3 id="_14">중간에 나오는 개념들</h3>
+<ul>
+<li><strong>i_1 cache</strong> — 1단계 모델이 이미지를 처리한 결과(i_1)를 미리 저장해둔다. 그러면 2단계 학습할 때 매번 이미지를 다시 처리할 필요 없이, 저장된 i_1만 불러오면 된다. 학습 속도가 한 자리 수 분 단위로 줄어든다</li>
+<li><strong>prebake (사전 구움)</strong> — 학습 직전에 이미지, 라벨, 부가 정보를 하나의 파일로 통째로 묶어 “구워두는” 작업. 매 학습마다 이미지를 읽고 처리하는 시간을 아끼기 위해서다. 마치 요리사가 미리 재료를 손질해서 냉장고에 넣어두고, 요리할 때 꺼내 쓰는 것과 같다</li>
+<li><strong>warm-start (웜스타트)</strong> — 이전에 학습한 가장 좋은 모델( best checkpoint)에서 이어서 학습하는 것. 처음부터 새로 학습하는 것보다 안정적이고 빠르다. 마치 요리사가 레시피를 처음부터 개발하는 게 아니라, 이미 검증된 레시피에서 시작해서 살짝 수정하는 것과 같다</li>
+<li><strong>Professor #654</strong> — 5월 15일경 이미 학습된 text-only 모델. 경로만 보고 핸들+페달을 결정하는 데 val L1(평균 오차) 0.0355라는 매우 좋은 성능. 이걸 f_1의 초기값으로 쓰면 처음부터 강한 출발점</li>
+<li><strong>TTC augment</strong> — 학습할 때 "충돌까지 시간(TTC)"이 작은 상황(위급 상황)을 일부러 많이 넣어서, 브레이크 학습이 더 풍부해지게 만드는 기법</li>
+</ul>
+<hr />
+<h2 id="9-scc-profile">9. SCC Profile — 얼마나 보수적으로 운전할까?</h2>
+<p>5/27에 도입. SCC의 "공격성"을 두 숫자로 정량화한다:</p>
+<table>
+<thead>
+<tr>
+<th>profile</th>
+<th>t_headway</th>
+<th>s_min</th>
+<th>성격</th>
+<th>본선</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p1</td>
+<td>0.4초</td>
+<td>2.0m</td>
+<td>가장 공격적</td>
+<td>(학습 포기)</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>0.8초</td>
+<td>3.5m</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>p3</strong></td>
+<td><strong>1.2초</strong></td>
+<td><strong>5.0m</strong></td>
+<td><strong>중간/기본</strong></td>
+<td><strong>★ 본선 기본</strong></td>
+</tr>
+<tr>
+<td>p4</td>
+<td>1.6초</td>
+<td>6.0m</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>p5</strong></td>
+<td><strong>2.0초</strong></td>
+<td><strong>7.0m</strong></td>
+<td><strong>가장 보수적</strong></td>
+<td><strong>★ 본선</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>t_headway</strong> — 앞차와 유지할 시간 간격. 클수록 더 멀리 떨어져서 같은 속도 유지</li>
+<li><strong>s_min</strong> — 멈출 때 유지할 최소 거리. 클수록 더 멀리서 멈추기 시작</li>
+</ul>
+<blockquote>
+<p>p3는 "보통 사람의 안전 운전", p5는 "초보 운전자의 매우 보수적 운전"이라고 생각하면 된다.<br />
+운영자가 profile만 바꾸면 같은 모델도 다른 성격으로 운전한다.</p>
+</blockquote>
+<h3 id="vx-log">vx-log 활성거리</h3>
+<p>고속에서는 앞차 검출 거리를 더 늘리는 보정:</p>
+<pre><code>실제 안전거리 = s_min + 6 × ln(1 + 속도/5)
+</code></pre>
+<p>저속은 그대로, 고속에서 더 일찍 앞차를 감지한다. 본선 채택 모델이 이 보정을 적용해 재학습한 결과물이다.</p>
+<hr />
+<h1 id="3_1">3부 — 모델 아키텍처 진화</h1>
+<p>이제부터 본격적으로 모델 구조가 어떻게 변해왔는지를 단계별로 따라간다. 3가지 단계가 있다:</p>
+<ol>
+<li><strong>출발점</strong> — 글만 보고 운전하는 에이스 (text-only)</li>
+<li><strong>첫 시도</strong> — 한 명이 다 하기 (실패)</li>
+<li><strong>핵심 전환</strong> — 역할 분담 (main / side 분리)</li>
+</ol>
+<h2 id="10">10. 출발점 — 글만 보고 운전하는 에이스</h2>
+<h3 id="_15">이미 잘 달리는 모델이 있었다</h3>
+<p>5월 15일경, 이 팀에게는 이미 강력한 모델이 있었다. <strong>controller_imitator</strong> 라는 이름의, <strong>text-only transformer</strong> 다.</p>
+<blockquote>
+<p>"text-only"라는 건 — 카메라 이미지를 안 보고, 경로(traj)와 내 차 정보(ego)라는 <strong>숫자/글만 보고</strong> 운전한다는 뜻이다.</p>
+</blockquote>
+<div class="mermaid">
+flowchart LR
+    A["🗺️ 경로 (x,y,v)×30"] --> B["controller_imitator<br/>(text-only transformer)<br/>글만 보고 운전"]
+    C["🚗 내 차 (vx, wz)"] --> B
+    B --> D["steer + base pedal<br/>평균 오차 0.0355"]
+    D --> E["✅ 실제 운전:<br/>경로를 부드럽게 잘 따라감"]
+    
+    style B fill:#e8f5e9
+    style E fill:#c8e6c9
+
+</div>
+<p>이 모델의 성능은 <strong>val L1 = 0.0355</strong> — 평균 오차가 0.0355로 매우 정확하다. 실제 시뮬레이터에서도 정해진 경로를 부드럽게 잘 따라갔다. 이 모델의 최고 버전을 <strong>Professor #654</strong> 라고 부른다.</p>
+<h3 id="_16">문제 — 눈이 없다</h3>
+<p>이 에이스 운전사는 <strong>경로는 잘 따라가는데 앞을 안 본다</strong>. 앞에 차가 있어도 경로에 정해진 속도로 그냥 들이받는다. 대회에서 추돌 회피는 필수 항목이다.</p>
+<blockquote>
+<p>"이 잘 도는 에이스에 눈(카메라)만 달아주자" — 이것이 프로젝트의 출발.</p>
+</blockquote>
+<hr />
+<h2 id="11">11. 첫 시도 — 한 명이 다 하기 (실패)</h2>
+<h3 id="_17">단일 모델 — 이미지도 보고 경로도 보고 다 혼자서</h3>
+<p>가장 순진한 접근 — <strong>한 모델이 카메라 이미지도 보고 경로도 보고 내 차 정보도 보고 핸들과 페달을 다 출력</strong> 하게 했다. 5/19~5/23 (v6~v18 시기)의 구조다.</p>
+<div class="mermaid">
+flowchart TD
+    A["📷 현재 이미지"] --> D
+    B["📷 이전 이미지"] --> D
+    C["🗺️ 경로 (x,y,v)×30"] --> D
+    E["🚗 내 차 (vx, wz)"] --> D
+    
+    D["👁️ encoder<br/>(이미지 처리)"] --> E2["TwoImgTrajEgoController<br/>한 모델이 다 받아서<br/>cross-attn + self-attn<br/>한 번에 다 처리"]
+    E2 --> F["steer + pedal × 30"]
+    
+    style D fill:#ffcdd2
+    style E2 fill:#ffcdd2
+
+</div>
+<h3 id="_18">결과 — 실패</h3>
+<p>이게 왜 실패했는가? <strong>이미지가 만드는 노이즈가, 원래 잘 되던 운전을 흔들어버렸다</strong>.</p>
+<blockquote>
+<p>비유: 요리를 잘하는 사람에게, 갑자기 "사진을 보면서 재료 상태도 판단하고, 레시피도 보고, 타이머도 보고, 다 혼자서 해"라고 하면 — 사진 판단에 신경을 쓰느라 원래 잘 하던 레시피대로 요리하는 것도 흔들린다.</p>
+</blockquote>
+<p>구체적으로:
+- text-only(경로만 보던) 때는 val L1(검증 오차 — 모델이 정답과 얼마나 다르게 예측하는지 평균, 낮을수록 좋다)이 0.0355였는데 이미지까지 보니까 0.05대로 <strong>악화됨</strong> — 이미지를 더 봤는데 오히려 운전을 더 못 하게 된 것이다
+- 이미지를 추가했는데 SCC가 잘 되는 것도 아니고, <strong>원래 잘 되던 경로 따라가기마저 흔들림</strong>
+- 이미지의 노이즈가 기본 운전 제어에 "새어들어간" 것 (leak)</p>
+<h3 id="524">사용자의 핵심 질문 (5/24)</h3>
+<blockquote>
+<p>"도저히 이해할 수 없는데 이미지로부터 객체 있음을 전달 받고 거리와 속도 정보도 비교적 정확히 전달 받는데 조건부 감속도 내는 행위를 왜 못하지?"</p>
+</blockquote>
+<p>진단: a_2(이미지 처리 모듈)가 앞차 정보를 <strong>잘 추론</strong> 하는데 그게 <strong>운전 명령으로 안 이어진다</strong>. 이미지 → a_2(잘 됨) → 운전 명령(못 됨) 사이가 끊겨 있다. 이것이 "메인 운전사는 그대로 두고, 보조 운전사가 이미지만 보고 브레이크만 담당하자"는 전환의 계기가 됐다.</p>
+<hr />
+<h2 id="12-524">12. 5/24 핵심 전환 — 역할 분담</h2>
+<p>5/24의 한 commit(<code>d25c9a9</code>)이 본선까지 살아남는 골격이다. <strong>4가지 결정</strong> 이 한 번에 들어갔다.</p>
+<h3 id="4">4가지 결정 — 쉽게 풀어서</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>결정</th>
+<th>왜</th>
+<th>비유</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>잘 되는 건 손대지 말자</strong></td>
+<td>f_1(에이스 운전사)을 frozen. 가르치지 않는다</td>
+<td>요리사가 잘 하니 레시피를 바꾸지 않는다</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>SCC 기능만 카메라로</strong></td>
+<td>카메라는 f_2(보조)에만. f_1은 카메라를 안 봄</td>
+<td>보조 요리사만 사진을 보고, 메인은 레시피만 본다</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>보정치만 만들자</strong></td>
+<td>f_2가 새 페달을 만드는 게 아니라, 기본 페달에 <strong>더할 보정치(delta)</strong> 만 출력</td>
+<td>메인이 만든 요리에, 보조가 "조금 덜 익혀"라는 보정만 한다</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>앞차 없으면 방해하지 마</strong></td>
+<td>gate가 "앞차가 있을 때만 보정치 적용" 역할. 없으면 0</td>
+<td>보조가 할 일 없으면 가만히 있어야 한다</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_19">출력 공식</h3>
+<pre><code>최종 페달 = 기본 페달 + g × 브레이크 보정치
+최종 핸들 = 핸들 (그대로)
+</code></pre>
+<ul>
+<li>앞차 없으면 g≈0 → <code>보정치 × 0 = 0</code> → 기본 페달 그대로 (경로 따라가기)</li>
+<li>앞차 가까이 오면 g→1 → 브레이크 보정치가 기본에 합산</li>
+</ul>
+<h3 id="redesign">Redesign 후 아키텍처</h3>
+<div class="mermaid">
+flowchart TD
+    CAM["📷 전방 카메라<br/>(250×1280)"] --> SEG
+    
+    subgraph SEG["seg backbone<br/>(이미지 이해)"]
+        SEG_OUT["차량/차선 인식"]
+    end
+    
+    SEG --> I1A["i_1 (현재)<br/>40 토큰"]
+    SEG --> I1B["i_1 (이전, 회전 보정)"]
+    
+    I1A --> A2["a_2<br/>(self-attn으로 두 이미지 합치기)"]
+    I1B --> A2
+    A2 --> I2["i_2<br/>(융합된 이미지 기억)"]
+    
+    I2 --> AUX["a_2_aux<br/>(앞차 정보 추출)"]
+    AUX --> AUX_OUT["앞차 있음? 거리?<br/>다가오는 속도? 옆칸?"]
+    
+    I2 --> F2
+    AUX --> F2
+    
+    TRAJ["🗺️ 경로 (x,y,v)×30"] --> F1
+    EGO["🚗 내 차 (vx, wz)<br/>경로 첫 칸에 끼워넣음"] --> F1
+    
+    F1["f_1 (메인)<br/>Professor #654<br/>❄️ FROZEN (가르치지 않음)<br/>→ 핸들 + 기본 페달"]
+    
+    F2["f_2 (보조)<br/>cross-attn(i_2)<br/>+ 앞차 정보 + TTC<br/>→ 브레이크 보정치 (음수)"]
+    
+    AUX --> GATE["gate<br/>(rule 시절: 임계값/평활)"]
+    GATE --> G_OUT["g (0~1)"]
+    
+    F1 --> STEER["steer (핸들)"]
+    F1 --> BASE["base_pedal (기본 페달)"]
+    F2 --> DELTA["delta (브레이크 보정)"]
+    G_OUT --> COMBINE
+    DELTA --> COMBINE["최종 페달<br/>= 기본 + g × 보정치"]
+    BASE --> COMBINE
+    
+    COMBINE --> OUT_PEDAL["최종 페달"]
+    STEER --> OUT_STEER["최종 핸들"]
+    
+    style F1 fill:#e8f5e9
+    style F2 fill:#e3f2fd
+    style GATE fill:#fff9c4
+    style A2 fill:#f3e5f5
+    style AUX fill:#f3e5f5
+
+</div>
+<h3 id="_20">핵심 직관 — 왜 이렇게 나눴나요?</h3>
+<ul>
+<li><strong>경로만 보고 핸들+기본 페달 결정</strong> 은, 글(숫자)만으로 충분한 일이다 — 카메라가 필요 없다</li>
+<li><strong>앞차 정보(있는지, 거리, 다가오는지)</strong> 는 카메라 이미지가 필요한 일이다</li>
+<li><strong>둘을 한 모델에서 같이 학습하면</strong>, 이미지의 노이즈가 핸들/기본 페달 결정을 흔든다</li>
+<li>그래서 <strong>역할을 분담</strong> — 기본 운전은 text, 브레이크 보정만 image</li>
+</ul>
+<h3 id="525-gate-4-rule-gate">5/25 — gate가 4번이나 갈렸다 (rule gate의 한계)</h3>
+<p>gate(브레이크 보정치를 얼마나 적용할지 결정)가 4번 교체됐다:</p>
+<table>
+<thead>
+<tr>
+<th>시도</th>
+<th>방식</th>
+<th>결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>a_2의 앞차 인지 점수로 판단</td>
+<td>한 프레임 단위로 켜졌다 꺼졌다 — 브레이크가 깔짝거림</td>
+</tr>
+<tr>
+<td>2</td>
+<td>임계값 고정</td>
+<td>같은 현상</td>
+</tr>
+<tr>
+<td>3</td>
+<td>gate 아예 제거 (g=1 고정)</td>
+<td>보정치가 양수(가속)까지 나와서 차가 출발을 못 함</td>
+</tr>
+<tr>
+<td>4</td>
+<td>이전 값과 섞어서 부드럽게 (EMA 평활)</td>
+<td>출발 가능. <strong>하지만 이게 "파이썬 코드로 후처리"라 대회 규정 §1.3과 충돌</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>EMA(Exponential Moving Average) — 이전 출력을 현재 출력에 섞어서, 한 번 튀는 값을 부드럽게 만드는 기법. "파이썬 코드로 후처리"하면 신경망 그래프가 끊기기 때문에 대회 규정에 어긋난다.</p>
+</blockquote>
+<p>이 문제가 5/26의 <strong>NN gate</strong>(신경망으로 gate를 대체)로 이어진다.</p>
+<hr />
+<h2 id="13-526-a1e2emodel">13. 5/26 하나로 묶기 — A1E2EModel</h2>
+<h3 id="_21">규정을 만족하려면</h3>
+<p>대회 규정 §1.1(파일 1개) + §1.3(하나의 연결된 신경망)을 만족하려면, 5개 모듈을 <strong>하나의 클래스</strong> 로 묶어야 한다. 이걸 <strong>A1E2EModel</strong>(End-to-End Model)이라고 한다.</p>
+<p>"End-to-End"의 의미 — 입력(카메라, 경로, 내 차 정보)부터 출력(핸들, 페달)까지, <strong>중간에 파이썬 if문이나 후처리 없이, 하나의 신경망 안에서 다 끝난다</strong>.</p>
+<h3 id="rule-gate-nn-gate">핵심 변경 — rule gate → NN gate</h3>
+<p>5/25의 4번 갈린 gate를, <strong>신경망으로 교체</strong> 했다:</p>
+<pre><code>5/25 (규정 위반): g = 파이썬_평활(임계값(앞차_인지_점수))    ← 그래프가 끊김
+5/26 (규정 통과): g = sigmoid(gate_head 신경망(앞차_점수, 상대속도))  ← 하나의 연결된 흐름
+</code></pre>
+<ul>
+<li><code>gate_head</code> — 작은 신경망(입력 10차원 → 은닉층 → 1차원 출력). "앞차가 있는지, 다가오는지"를 보고 0~2 사이의 점수를 냄</li>
+<li>학습할 때 최종 페달 오차가 → g → gate_head까지 <strong>한 번에 역전파</strong> 로 흐름 — 오차가 거꾸로 흘러가면서 각 숫자가 오차에 얼마나 기여했는지를 계산하는데, 이 기여도를 <strong>gradient (그래디언트, 기울기)</strong> 라고 한다. gradient가 한 번에 흐른다는 건, gate_head의 숫자들도 "브레이크를 잘 걸었는지"에 따라 자동으로 수정된다는 뜻</li>
+<li>실제 운전할 때도 학습할 때와 <strong>같은 방식</strong> 으로 계산 — "학습=추론(inference) 동일 경로"</li>
+</ul>
+<h3 id="a1e2emodel">A1E2EModel 구조</h3>
+<div class="mermaid">
+flowchart TD
+    CAM["📷 이미지"] --> SEG["seg backbone<br/>(이미지 이해)"]
+    SEG --> A2["a_2<br/>(self-attn으로 이미지 합치기)"]
+    A2 --> I2["i_2<br/>(이미지 기억)"]
+    I2 --> AUX["a_2_aux → 7d<br/>(앞차 정보)"]
+    
+    TRAJ["🗺️ 경로 + 내 차"] --> F1["f_1 (#654, ❄️FROZEN)<br/>→ 핸들 + 기본 페달"]
+    
+    I2 --> F2["f_2 (보조)<br/>cross-attn(i_2)<br/>+ 앞차 정보 + TTC<br/>→ 브레이크 보정치"]
+    AUX --> F2
+    
+    AUX --> GATE["gate_head<br/>(신경망 MLP, 새로 도입)<br/>→ g ∈ (0, 2)"]
+    
+    F1 --> STEER["steer"]
+    F1 --> BASE["base_pedal"]
+    F2 --> DELTA["delta"]
+    GATE --> G["g"]
+    
+    BASE --> FINAL["최종 페달<br/>= 기본 + g × 보정치"]
+    DELTA --> FINAL
+    G --> FINAL
+    
+    STEER --> OUT_S["최종 핸들"]
+    FINAL --> OUT_P["최종 페달"]
+    
+    style F1 fill:#e8f5e9
+    style F2 fill:#e3f2fd
+    style GATE fill:#fff9c4
+    style A2 fill:#f3e5f5
+    style AUX fill:#f3e5f5
+
+</div>
+<h3 id="526">5/26의 다른 주요 변경</h3>
+<table>
+<thead>
+<tr>
+<th>변경</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>moraibridge 이전</strong></td>
+<td>시뮬레이터와 ROS 통신을 외부 패키지에서 분리. <code>cd moraibridge &amp;&amp; catkin_make</code> 한 줄로 본선 PC 셋업</td>
+</tr>
+<tr>
+<td><strong>ACC wiring</strong></td>
+<td>상대속도(vrel)를 직접 입력받아 미리 브레이크 준비. "반응형"이 아니라 "예방형" 제어</td>
+</tr>
+<tr>
+<td><strong>A2ModelMultiFrame(5f)</strong></td>
+<td>5장의 이미지를 연속으로 봐서 앞차 속도 변화 추정 정확도 향상</td>
+</tr>
+<tr>
+<td><strong>bin80 stride16</strong></td>
+<td>이미지 처리 해상도를 높임(토큰 40→80). 멀리 있는 앞차의 접근 속도 추정 오차 <strong>3.0→1.9 m/s</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="learned-temporal-gate-distill-beat">learned temporal gate (distill / beat)</h3>
+<p>EMA의 시계열 평활 효과를 작은 신경망으로 대체:
+- <strong>distill</strong> — 예전 파이썬 평활(EMA) 흉내. 거짓 경보(FP) 0.84로 최저
+- <strong>beat</strong> — 파이썬 평활보다 더 좋게 학습. 앞차 검출률 94.5%, FP 1.5. <strong>예선 채택</strong></p>
+<hr />
+<h2 id="14">14. 최종 본선 아키텍처</h2>
+<p>5/27에 5종의 단일 <code>.pt</code> 파일로 최종 완성됐다.</p>
+<div class="mermaid">
+flowchart TD
+    subgraph FILE["📦 submit/scc_p3_dbspd2.pt (~176 MB)"]
+        
+        subgraph MODEL["A1E2EModel — 하나의 신경망"]
+            SEG_W["seg_backbone<br/>(이미지 이해)"]
+            A2_W["a_2 (mf20)<br/>21프레임 시계열 이미지 합치기"]
+            AUX_W["a_2_aux<br/>앞차 정보 7개 추출"]
+            F1_W["f_1 (#656, ❄️FROZEN)<br/>핸들 + 기본 페달"]
+            F2_W["f_2<br/>브레이크 보정치 (val 0.0344)"]
+            GATE_W["gate_head<br/>(신경망, 보정치 켜기/끄기)"]
+        end
+    end
+    
+    FILE --> LOAD["실행:<br/>환경변수 E2E_CKPT=submit/scc_p3_dbspd2.pt<br/>→ 모델 1개 로드"]
+    
+    LOAD --> INFER["0.05초마다:<br/>카메라, 경로, 내차정보 입력 →<br/>핸들 + 페달 출력 → 시뮬에 전달"]
+    
+    INFER --> VERIFY["검증: maxdiff 1.8e-7<br/>(분리해서 계산 vs 하나로 계산 —<br/>소수점 오차 수준으로 같음)"]
+    
+    style FILE fill:#e8f5e9
+    style MODEL fill:#f3e5f5
+    style VERIFY fill:#fff9c4
+
+</div>
+<h3 id="5">본선 제출 파일 5종</h3>
+<table>
+<thead>
+<tr>
+<th>파일</th>
+<th>용도</th>
+<th>profile</th>
+<th>학습 데이터</th>
+<th>오차</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scc_p3_db.pt</code></td>
+<td>본선</td>
+<td>p3</td>
+<td>speedway 제외</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scc_p3_dbspd.pt</code></td>
+<td>본선</td>
+<td>p3</td>
+<td>speedway 포함 (보정 전)</td>
+<td>0.0427</td>
+</tr>
+<tr>
+<td><strong>scc_p3_dbspd2.pt</strong></td>
+<td><strong>본선 기본</strong></td>
+<td><strong>p3</strong></td>
+<td>speedway + 활성거리 보정</td>
+<td><strong>0.0344</strong></td>
+</tr>
+<tr>
+<td><code>scc_p5_dbspd2.pt</code></td>
+<td>본선</td>
+<td>p5</td>
+<td>보수적 운전</td>
+<td>0.0322</td>
+</tr>
+<tr>
+<td><code>qualifier.pt</code></td>
+<td><strong>예선</strong></td>
+<td>(별도)</td>
+<td>prof635 + a_2 v7b + beat gate</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="005">최종 추론 흐름 (0.05초마다)</h3>
+<div class="mermaid">
+sequenceDiagram
+    participant SIM as MORAI 시뮬레이터
+    participant ROS as 운영 코드
+    participant MODEL as A1E2EModel
+    participant SEG as seg backbone
+    participant A2 as a_2 (21프레임)
+    participant AUX as a_2_aux
+    participant F1 as f_1 (frozen)
+    participant F2 as f_2 (보조)
+    participant GATE as gate_head
+    
+    SIM->>ROS: 카메라, 내차정보, 경로 (20 Hz)
+    ROS->>MODEL: forward(입력)
+    
+    MODEL->>SEG: 이미지 처리
+    SEG-->>MODEL: i_1 (이미지 요약 × 21프레임)
+    
+    MODEL->>A2: 21프레임 합치기
+    A2-->>MODEL: i_2 (융합된 이미지 기억)
+    
+    MODEL->>AUX: 앞차 정보 추출
+    AUX-->>MODEL: 앞차 있음? 거리? 속도? 옆칸?
+    
+    MODEL->>F1: 경로 + 내차정보
+    F1-->>MODEL: 핸들 + 기본 페달
+    
+    MODEL->>F2: 이미지 기억 + 앞차정보
+    F2-->>MODEL: 브레이크 보정치
+    
+    MODEL->>GATE: 앞차 점수 + 상대속도
+    GATE-->>MODEL: g (0~2)
+    
+    MODEL-->>ROS: 최종 핸들 + 최종 페달<br/>(= 기본 + g × 보정치)
+    ROS->>SIM: 운전 명령
+
+</div>
+<h3 id="4_1">진화의 4단계 요약</h3>
+<table>
+<thead>
+<tr>
+<th>시점</th>
+<th>특징</th>
+<th>핵심 변화</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5/19~5/23 (단일 모델)</td>
+<td>한 모델이 다 받음</td>
+<td>이미지 노이즈가 기본 운전을 흔듦</td>
+</tr>
+<tr>
+<td>5/24 (역할 분담)</td>
+<td>main(frozen) + side 분리</td>
+<td>브레이크 보정치 + gate 구조 정착</td>
+</tr>
+<tr>
+<td>5/25 (prof635 v5)</td>
+<td>한 파일로 묶임</td>
+<td>근데 gate가 파이썬 코드(규정 위반)</td>
+</tr>
+<tr>
+<td><strong>5/27 (최종)</strong></td>
+<td><strong>한 파일 + 한 신경망 + NN gate</strong></td>
+<td><strong>환경변수 1줄로 셋업 끝</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="15-gate">15. Gate — 언제 브레이크를 밟을까?</h2>
+<p>gate g는 브레이크 보정치에 곱하는 "켜기/끄기" 점수다. 5/25~5/26에 걸쳐 진화했다.</p>
+<div class="mermaid">
+flowchart LR
+    G1["5/25 시도 1<br/>앞차 점수로 판단<br/>→ 깔짝거림"] --> G2
+    G2["5/25 시도 2<br/>임계값 고정<br/>→ 같은 현상"] --> G3
+    G3["5/25 시도 3<br/>gate 제거 (g=1)<br/>→ 양수 나와서 출발 불가"] --> G4
+    G4["5/25 시도 4<br/>이전값과 섞기 (EMA)<br/>→ 가능 but 규정 위반"] --> G5
+    G5["5/26 최종<br/>신경망으로 대체<br/>→ 규정 통과, 학습도 됨"]
+    
+    style G4 fill:#fff9c4
+    style G5 fill:#e8f5e9
+
+</div>
+<h3 id="4_2">보정치 출력 형식 4종</h3>
+<table>
+<thead>
+<tr>
+<th>형식</th>
+<th>수식</th>
+<th>특징</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>signed</strong></td>
+<td>g × 2·tanh(원본) ∈ (-2, 2)</td>
+<td>브레이크(음수) + 가속(양수) 둘 다. 양수까지 나오는 게 사고 원인</td>
+</tr>
+<tr>
+<td><strong>brake_only</strong></td>
+<td>g × σ(원본), 음수만</td>
+<td>가속은 기본이 책임. 5/26 배포</td>
+</tr>
+<tr>
+<td><strong>no_gate</strong></td>
+<td>보정치 (g 안 곱함)</td>
+<td>gate 끄고 raw 보정치. 비교용</td>
+</tr>
+<tr>
+<td><strong>distill / beat</strong></td>
+<td>신경망 gate</td>
+<td>distill=FP 0.84 최저, beat=검출률 94.5%. <strong>예선은 beat 채택</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="527-gate">5/27 gate 개선</h3>
+<ul>
+<li><strong>gate 학습 신호 추가</strong>: "앞차가 내 차선에 들어오는 순간 g→1"이라는 정답을 가르침 (BCE = Binary Cross-Entropy, 이진 교차 엔트로피)</li>
+<li><strong>closing-only</strong>: 다가오는 차(vrel &lt; 0)일 때만 gate 열기. 멀어지는 차는 브레이크 필요 없음</li>
+<li><strong>g = 2×sigmoid</strong>: (0, 2) 범위. g=1이 "보정치 100% 적용" 지점</li>
+<li><strong>TemporalMLP K=16</strong>: 현재+직전 15프레임의 gate 값을 봐서 부드러운 gate 출력. EMA의 신경망 버전</li>
+</ul>
+<hr />
+<h2 id="16-a_2-9">16. a_2 의 9일 진화</h2>
+<p>a_2(이미지 합치기 모듈)와 a_2_aux(앞차 정보 추출)가 v3 → mf20까지 9일 동안 진화했다. 이런 버전별 비교를 <strong>ablation (소거 실험)</strong> 이라고 부른다 — 한 가지만 바꿔서 효과를 측정하는 실험. 각 단계의 동기는 "실제 운전에서 어떤 문제를 고치고 싶은가"다.</p>
+<div class="mermaid">
+flowchart TD
+    V1["v1 (~5/20)<br/>기본 구조"] --> V3
+    V3["v3 (5/20~21)<br/>카메라 종류 통일"] --> V4
+    V4["v4 (5/22)<br/>focal loss 도입<br/>→ 앞차 없는데 있다고<br/>하는 오류 줄이기"] --> V5
+    V5["v5 (5/25)<br/>크기 축소 + 캐시화<br/>→ 학습 속도 향상"] --> V6
+    V6["v6 (5/25)<br/>다른 운전자 데이터 추가<br/>→ 다양성 확보"] --> V7
+    V7["v7 (5/25 후)<br/>★ 회귀 버그 수정<br/>(정규화 + 마스크)<br/>→ 앞차 속도 추정 복구"] --> V7B
+    V7B["v7b (5/25)<br/>가중치 조정<br/>→ 가까운 앞차 검출 향상<br/>(예선 채택)"] --> MF20
+    
+    V7 --> V7C["v7c<br/>가중치 너무 극단<br/>(과적합)"]
+    V7B --> V8["v8/v9 (5/26)<br/>불확실성 추정 시도<br/>→ 효과 없어서 폐기"]
+    
+    V7B --> STRIDE["해상도 향상 (5/26)<br/>토큰 40→80<br/>→ 멀리 앞차 속도<br/>오차 3.0→1.9 m/s"]
+    STRIDE --> MF20
+    
+    V5 --> MF5F["5프레임 버전 (5/26)<br/>ACC 변형용"]
+    
+    MF20["mf20 (5/27)<br/>★ 본선 채택<br/>21프레임 시계열<br/>→ 앞차 속도 추정 정확도 대폭 향상"]
+    
+    style V7 fill:#ffcdd2
+    style V7B fill:#e8f5e9
+    style MF20 fill:#c8e6c9
+    style V8 fill:#ffe0b2
+    style V7C fill:#ffe0b2
+
+</div>
+<h3 id="v7">★ v7 — "학습은 잘 됐는데 실제로 안 된다"의 전형</h3>
+<p>v3~v6까지 "앞차 속도(vL_rel) 추정이 영원히 안 됨" — 앞차가 다가오는데도 속도 추정값이 0으로 고정.</p>
+<p><strong>원인</strong> — 손실 함수(loss)에 두 가지가 누락:</p>
+<ol>
+<li><strong>정규화(normalize) 누락</strong> — 앞차 속도의 단위가 다른 정보들과 안 맞아서, 다른 정보의 학습에 묻혀버림</li>
+<li><strong>마스크 누락</strong> — 앞차가 없는 프레임도 "앞차 속도 = 0"이라고 학습해서, 평균이 0으로 깎임 → 추정값이 항상 0에 수렴</li>
+</ol>
+<blockquote>
+<p>비유: 시험에서 "문제가 없는 빈칸도 0점 처리"하면, 학생이 "어떤 문제든 0이라고 찍는 게" 평균 점수가 높다고 착각한다.</p>
+</blockquote>
+<p><strong>왜 발견이 늦었나</strong> — 손실 곡선(loss curve)은 잘 떨어지는 것처럼 보였다. 대부분의 프레임이 앞차 없음(정답=0)이라서, 0으로 찍기만 해도 점수가 괜찮아 보였기 때문. 발견은 "추정값의 분산이 0인가?" 한 번 찍어보고 나서야 했다.</p>
+<p><strong>Fix (v7)</strong>:</p>
+<pre><code class="language-python"># v5/v6 (버그)
+loss = L1_loss(추정값, 정답)                    # 정규화 없음, 앞차 없는 프레임도 포함
+
+# v7 (수정)
+loss = L1_loss(
+    (추정값 - 평균) / 표준편차,                   # 정규화
+    (정답  - 평규) / 표준편차,
+)
+loss = (loss * 앞차있음_마스크).평균()            # 앞차 있는 프레임만 학습
+</code></pre>
+<h3 id="v4-focal-loss">v4 — focal loss로 거짓 경보 줄이기</h3>
+<p>데이터의 대부분은 "앞차 없음"이다. 일반적인 손실 함수인 BCE(Binary Cross-Entropy, 이진 교차 엔트로피 — "예/아니오" 둘 중 하나를 맞추는 확률 문제에서 쓰는 기본 손실 함수)를 쓰면 AI가 "일단 앞차 있다고 해놓는 게" 평균 점수가 높다고 착각한다. focal loss는 "이미 잘 맞춘 쉬운 문제(앞차 없음)"의 점수 비중을 낮추고 "어려운 문제(앞차 있음, 특히 가까운 경우)"에 집중하게 만든다.</p>
+<p><img alt="a_2 v3 vs v4 — 성능 비교 막대 그래프" src="../../99_assets/a2_v3_vs_v4.png" /></p>
+<blockquote>
+<p>v3 와 v4 의 성능 비교 막대 그래프. Accuracy, Precision, Recall, F1, Specificity 5개 지표를 비교한다. focal loss 를 도입한 v4 가 전 지표에서 크게 올라갔다 — 특히 Precision(정밀도 — "앞차 있다고 한 것 중 실제로 앞차인 비율")과 Recall(재현율 — "실제 앞차 중 모델이 잡아낸 비율")이 모두 70점대에서 97점대로 급등했다. 즉 거짓 경보(FP)도 줄이면서 진짜 앞차 검출 능력도 함께 향상된 것이다.</p>
+</blockquote>
+<p><img alt="a_2 v4 학습 curves — focal 이후 loss / metric 변화" src="../../99_assets/a2_v4_training_curves.png" /></p>
+<blockquote>
+<p>v4 학습 곡선. epoch별 train / val L1(오차, 낮을수록 좋음)과 lead presence(앞차 유무 판정) Precision / Recall을 보여준다. 빨간 점선은 v3의 같은 epoch 비교이다. v4의 P/R 모두 v3보다 위 — 특히 Precision(정밀도 — "앞차 있다고 한 것 중 실제로 앞차인 비율")이 의미 있게 높다. 거짓 경보가 줄었다는 뜻이다.</p>
+</blockquote>
+<h3 id="mf20">mf20 — 본선 채택</h3>
+<ul>
+<li>21프레임의 시계열 이미지를 입력으로 받아, 앞차의 속도 변화를 시간적으로 추정</li>
+<li>gate 학습 신호와 결합 시 "다가오는 차만 브레이크" 거동 성공</li>
+<li><strong>주의</strong>: mf20으로 학습 데이터를 바꿨는데 실제 운전 코드는 예전 버전(2프레임)인 채로 방치 → 똑같은 사진을 넣어도 다른 결과가 나오는 사고 발생 (뒤 §17에서 다시 설명)</li>
+</ul>
+<h3 id="a_2-v25h-a">★ a_2를 학습해놓고 안 썼던 사건 (v25h-A)</h3>
+<p>v25h-A라는 버전에서 메인 모델 안에 <strong>새로 만든 레이어(fresh cross-attn)</strong> 가 a_2가 만든 결과물(i_2)을 무시하고 이미지 요약(i_1)부터 다시 합치는 새 경로를 만들었다. 결과 — <strong>a_2를 한참 학습했는데 실제 운전에서 a_2의 숫자가 한 번도 사용되지 않았다</strong>.</p>
+<div class="mermaid">
+flowchart TD
+    subgraph WRONG["❌ v25h-A: 학습한 a_2가 사용되지 않음"]
+        WA1["i_1 (현재)"] --> WA2["학습된 a_2<br/>(한참 학습함)"]
+        WA3["i_1 (이전)"] --> WA2
+        WA2 --> WA4["i_2<br/>(만들어지긴 하지만<br/>아무 데도 안 감)"]
+        WA4 --> WA5["💀 dead end"]
+        
+        WA1 --> WB1["메인 안의 fresh cross-attn<br/>(처음부터 다시 학습)"]
+        WA3 --> WB1
+        WB1 --> WB2["새로 합친 결과"]
+        WB2 --> WB3["경로 + 이전 결과 합침<br/>→ 핸들 + 페달"]
+    end
+    
+    subgraph RIGHT["✅ v25h-B: 학습한 a_2가 핵심 경로에 있음"]
+        RA1["i_1 (현재)"] --> RA2["학습된 a_2<br/>(image fusion)"]
+        RA3["i_1 (이전)"] --> RA2
+        RA2 --> RA4["i_2 (학습된 결과)"]
+        RA4 --> RA5["a_2_aux<br/>(앞차 정보)"]
+        RA4 --> RA6["f_2 (보조)<br/>cross-attn(i_2)<br/>i_2 활용"]
+        RA5 --> RA6
+        RA6 --> RA7["브레이크 보정치"]
+        RA5 --> RA8["gate × 보정치"]
+        RA7 --> RA8
+        RA9["f_1 (frozen)<br/>→ 기본 페달"] --> RA10["최종 = 기본 + g × 보정치"]
+        RA8 --> RA10
+    end
+    
+    style WRONG fill:#ffcdd2
+    style RIGHT fill:#e8f5e9
+    style WA5 fill:#ef9a9a
+
+</div>
+<blockquote>
+<p>교훈: "학습한 숫자가 실제 운전 경로에 들어가는가?"를 자동으로 검증해야 한다. 손실 곡선만 보면 "잘 학습된 것 같은데" 하고 넘어가기 쉽다.</p>
+</blockquote>
+<p><img alt="a_2 attention gradcam — vL_rel 회귀 시 model 이 보는 영역" src="../../99_assets/a2_gradcam_vLrel.png" /></p>
+<blockquote>
+<p>GradCAM — 모델이 상대속도(vL_rel)를 예측할 때 이미지의 어느 부분을 집중해서 보는지 시각화한 것. 빨강/노랑이 짙을수록 모델이 그 영역을 중요하게 본다. 가까운 앞차(close-lead)에서는 차량 뒷부분, 특히 후미등 부근에 시선이 집중된다 — 앞차가 다가오는지 멀어지는지를 거기서 읽어내는 것이다. 멀리 있는 앞차(far-lead)는 시선이 약하고 퍼져 있다.</p>
+</blockquote>
+<hr />
+<h2 id="17-">17. 핵심 메타-패턴</h2>
+<h3 id="5_1">"문서와 실제가 안 맞는다" — 5번이나 재발</h3>
+<p>9일 동안 똑같은 패턴의 사고가 5번 반복됐다:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>시점</th>
+<th>사건</th>
+<th>한 줄 요약</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>5/25</td>
+<td>i_2 mismatch</td>
+<td>학습 데이터와 실제 운전에서 같은 사진을 넣어도 다른 결과 (cos 0.80 → 수정 후 1.0)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>5/25</td>
+<td>delta_mode 미전달</td>
+<td>브레이크가 양수(가속)로 나오는 버그</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5/27</td>
+<td>i_2 두 번째 mismatch</td>
+<td>학습은 21프레임, 실제는 2프레임 — 2일 만에 같은 실수 재발</td>
+</tr>
+<tr>
+<td>4</td>
+<td>5/27</td>
+<td>qualifier 오판</td>
+<td>문서에는 A 후보, 실제로 잘 되는 건 B 후보</td>
+</tr>
+<tr>
+<td>5</td>
+<td>5/28</td>
+<td>RESLOG 빈값</td>
+<td>다른 환경에서 실행 안 해보고 제출 → 로그가 다 비어있음</td>
+</tr>
+</tbody>
+</table>
+<p>5번 모두 "사람이 머리로 기억하는 체크리스트"의 한계. 코드로 자동 검증을 박아야 막을 수 있다.</p>
+<h3 id="-">메타-패턴 — "학습은 됐는데 실제 운전에 효과가 없다"</h3>
+<p>위 5 사건 위에, 한 단계 더 추상화한 패턴이 있다:</p>
+<div class="mermaid">
+flowchart TD
+    META["메타-패턴:<br/>학습한 숫자/모듈이<br/>실제 운전 경로에 들어가는가?<br/>검증 부재"]
+    
+    META --> C1["5/25 i_2 mismatch<br/>같은 사진 → 다른 결과<br/>(데이터 생성 방식이 다름)"]
+    META --> C2["5/25 v25h-A<br/>학습한 a_2가 한 번도<br/>호출되지 않음 (dead end)"]
+    META --> C3["5/27 i_2 재발<br/>학습은 21프레임,<br/>실제는 2프레임"]
+    
+    C1 --> D1["증상: 점수는 좋은데<br/>실제 운전이 이상함"]
+    C2 --> D2["증상: 점수는 그럭저럭인데<br/>경로만 보는 모델과 차이 없음"]
+    C3 --> D3["증상: 앞차 검출 9%<br/>(정상 ~50%)"]
+    
+    style META fill:#ffcdd2
+    style C1 fill:#fff9c4
+    style C2 fill:#fff9c4
+    style C3 fill:#fff9c4
+
+</div>
+<p>세 사건 모두 <strong>조용한 증상(silent)</strong> — 자동 검사가 없으면 "실제 운전시켜보고 → 이상하다 → 경로 추적"이라는 긴 과정을 거쳐야 발견한다.</p>
+<h3 id="3_2">다음 사이클의 처방 (3가지)</h3>
+<ol>
+<li>학습한 모듈이 실제 운전 경로에서 호출되는지 자동 검증</li>
+<li>학습 데이터와 실제 운전 데이터가 같은지 확인 (cos similarity 한 줄)</li>
+<li>모델 파일 옆에 "이 데이터 버전, 이 호출 방식을 가정함"이라는 메모 한 줄</li>
+</ol>
+<hr />
+<h1 id="4-9">4부 — 9일 일지</h1>
+<h2 id="18-9">18. 9일 회고 (날짜별)</h2>
+<h3 id="519">5/19 (월) — 설계 합의의 날</h3>
+<pre><code>12:46  저장소 생성
+14:59  설계 대화 1차 — 가속도 출력 + 내 차 정보 위치 + 경로 첫 칸
+18:02  기존 MPC 버리고 새 파이프라인 구축
+18:09  설계 대화 2차 — 옵션 축소
+총 ~5시간 35분
+</code></pre>
+<p><strong>4가지 합의</strong> (모두 본선까지 생존):</p>
+<table>
+<thead>
+<tr>
+<th>합의</th>
+<th>결정</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>#1 출력</td>
+<td>가속도 raw m/s² (페달은 호환용으로 공존)</td>
+</tr>
+<tr>
+<td>#2 내 차 정보</td>
+<td>(속도, 회전속도) 2개만, 경로 첫 칸에 끼워넣기</td>
+</tr>
+<tr>
+<td>#3 정답 파이프라인</td>
+<td>기존 것 버리고 새로 구축 (HPIPM + Frenet)</td>
+</tr>
+<tr>
+<td>#4 옵션</td>
+<td>경로=(x,y,v)만, 불필요한 옵션 제거</td>
+</tr>
+</tbody>
+</table>
+<p>이 시점 — <strong>아직 역할 분담 없음</strong>. 한 모델이 다 받아서 처리.</p>
+<p><strong>회고</strong>: 옵션은 일찍 줄일수록 좋다. 시각화 도구 투자는 늘 하루 안에 회수된다 — 거의 법칙.</p>
+<hr />
+<h3 id="520">5/20 (화) — 한 번에 다섯 코너</h3>
+<pre><code>11:45  SAM 분할 품질 + K=N 데이터 + 단계별 파이프라인 + 이름 규약 (5개 동시 push)
+17:22  라벨링 + 운영 코드 + 외부 의존성 제거 (6개)
+총 5시간 42분
+</code></pre>
+<p><strong>다섯 가지를 한 번에</strong>:
+1. SAM 분할 품질 개선
+2. 한 장면에 여러 경로의 정답 생성 (K=N bank)
+3. 단계별 학습 파이프라인
+4. 실시간 운영 코드(ROS node)
+5. 외부 의존성 제거 — 다른 머신에서 즉시 가동 가능</p>
+<p><strong>이름 규약이 박힌 날</strong> — f_1, f_2, a_2, a_2_aux, i_1, i_2, i_g. 9일 내내 안 바뀜.</p>
+<p><strong>회고</strong>: 외부 의존성 자르기는 일찍 할수록 좋다. design이 단단하면 코드가 빠르다.</p>
+<hr />
+<h3 id="521">5/21 (수) — 인프라 두 개를 한 날에</h3>
+<pre><code>02:13  i_1 캐시화 + 카메라 종류 통일 (새벽)
+16:14  설계 문서 + 성능 측정 + 9.6배 가속
+22:25  MPC 제약 풀기 4단계
+총 ~21시간 (새벽 + 종일)
+</code></pre>
+<p><strong>i_1 캐시화</strong> — 이미지 처리 결과를 미리 저장. 매 학습마다 이미지를 다시 처리할 필요 없이 저장된 결과만 불러옴. 학습 속도 한 자리 수 분 단위로 줄어듦. 토큰 이동 벡터화로 9.6배 가속.</p>
+<p><strong>MPC 제약 풀기</strong> — 정답 합성 실패율을 0%로:
+- 가속도 ±5(실패) → ±15(일부 통과) → <strong>±20 + 매번 초기화 + 5번 예비 계산</strong></p>
+<p><strong>회고</strong>: 제약을 풀어준 게 데이터 품질 향상으로 직결. 정답의 제약은 실제 운전의 제약보다 느슨하게 — 비대칭.</p>
+<hr />
+<h3 id="522">5/22 (목) — 운영 편의</h3>
+<pre><code>15:58  스트리밍 갱신 + 추론 경로 통일 + 설계 문서 갱신 (10개)
+총 커밋 창 6분, 실제 작업 수 시간
+</code></pre>
+<p><strong>스트리밍 갱신</strong> — 학습 도중 새 데이터가 들어와도 처음부터 다시 안 해도 됨. 이후 며칠의 빈번한 데이터 합류가 매끄러워짐.</p>
+<p><strong>추론 경로 통일</strong> — 학습(캐시)과 실제 운전이 같은 방식으로 계산. (하지만 i_2 쪽은 못 맞춰서 5/25 사고의 원인이 됨)</p>
+<p><strong>a_2 v4</strong> (백그라운드) — focal loss로 앞차 없는데 있다고 하는 오류(FP) 줄이기.</p>
+<p><strong>회고</strong>: 학습 인프라의 작은 편의 기능은 초기에 박아두는 ROI가 항상 크다.</p>
+<hr />
+<h3 id="523">5/23 (금) — 잔버그 한꺼번에</h3>
+<pre><code>00:33  데이터셋 합치기 + NaN 방어 + 경로 정리 (6개)
+14:41  NFS 700배 가속 + 체크포인트 추적 + 증강 (8개)
+총 ~14시간 20분
+</code></pre>
+<p>잔버그 줄줄이 — NaN 방어, 파일 접근 700배 가속, 경로 pit 구간 제거, 체크포인트 추적 시스템, 브레이크 증강.</p>
+<p><strong>회고</strong>: 큰 전환 전에 하루는 잔버그 정리에 쓰는 게 ROI가 크다. NaN 안 잡았으면 다음 날 학습이 멈췄을 것.</p>
+<hr />
+<h3 id="524-commit">5/24 (토) — 역할을 가른 한 commit</h3>
+<pre><code>21:18  d25c9a9 — main 안 봄 + side cross-attn + a_2 정보 + TTC
+총 5개 commit
+</code></pre>
+<p><strong>commit 수는 가장 적지만 영향력은 가장 큰 날.</strong> 4가지 전환 결정으로 본선 골격 확정.</p>
+<blockquote>
+<p>사용자: "도저히 이해할 수 없는데 이미지로부터 객체 있음을 전달 받고 거리와 속도 정보도 비교적 정확히 전달 받는데 조건부 감속도 내는 행위를 왜 못하지?"</p>
+</blockquote>
+<p><strong>회고</strong>: "이 두 역할이 서로 노이즈가 되나?"를 묻는 습관. 역할 분담은 흔한 패턴인데 실제로 쪼개는 결정은 늘 늦게 난다. 합쳐서 시작하면 합치는 게 편하니까. 이번엔 5/24가 마지노선.</p>
+<hr />
+<h3 id="525">5/25 (일) — 진흙탕</h3>
+<pre><code>01:15  a_2 v5/v6 학습 시작
+16:09  첫 실제 운전 + ★ i_2 불일치 발견/수정 (cos 0.80 → 1.0)
+17:13  ★ gate 4단계 흔들기
+23:57  긴급 수정 — 브레이크가 가속으로 나오는 버그
+총 ~22시간 43분
+</code></pre>
+<p><strong>사건 1 — i_2 불일치</strong>: 처음으로 실제 운전시켜봄. 앞차가 있는데 브레이크가 안 나옴. 반나절을 모델 파일 의심 → 같은 사진에서 학습 때와 실제의 i_2를 비교 → <strong>cos 유사도 0.80</strong> (거의 다른 결과). 원인: 학습은 최신 이미지 처리 모델로 i_2를 만들었는데 실제 운전은 예전 모델로 계산. <strong>수정 한 줄</strong> — 정합 후 cos 1.0 회복, 제동 복원.</p>
+<p><strong>사건 2 — gate 표류</strong>: gate의 편향이 +3.02로 튀어서, 항상 켜진 상태(sigmoid(3.02)≈0.95). 앞차 없는데 브레이크. 4번 갈았음 (→ §15 참조).</p>
+<p><strong>회고</strong>: 학습/실제가 같은 입력을 쓰는지 가장 먼저 cos 유사도 한 줄 찍었어야. 반나절을 모델 파일 의심에 썼다. 가설 순서가 틀렸다.</p>
+<hr />
+<h3 id="526_1">5/26 (월) — 부풀리기</h3>
+<pre><code>00:02  전날 진흙탕 정리
+01:18  ★ 좀비 프로세스 24시간 발견/제거
+01:32  신경망 gate 도입 (distill/beat)
+03:23  A1E2EModel — 하나로 묶기 (규정 §1.1/§1.3)
+09:12  ACC + 5프레임 + 단일 그래프 검증
+11:32  시뮬 통신 분리 (8개 commit)
+23:16  해상도 향상 + 다차량 + 신경망 gate 교체
+총 ~23시간 43분, 27개 commit
+</code></pre>
+<p><strong>큰 변경 5개</strong>: 시뮬 통신 분리, A1E2EModel 통합, rule→신경망 gate, 해상도 향상, ACC.</p>
+<p><strong>좀비 프로세스</strong>: 예전 통신 노드 5개가 24시간 살아있어 시뮬에 "풀스로틀 + 핸들 -1" 충돌 명령. 전부 제거.</p>
+<p><strong>회고</strong>: 전날의 gate 4단계 vs 오늘의 신경망 gate 1개 commit의 대비. "rule 한두 번 시도 후 안 되면 즉시 신경망으로 넘어가기"가 답.</p>
+<hr />
+<h3 id="527-19-9">5/27 (화) — 본선 전날, 19시간 9단계</h3>
+<pre><code>01:22  gate 학습 신호 + 21프레임 캐시
+02:40  SCC profile p1~p5 합성
+01:43  ★ speedway 데이터 빠진 것 발견 → 8단계 가공 시작
+03:32  &quot;반응이 왜이리느리징&quot; (병렬 작업 과부하)
+07:01  ★ 통신 주기 1.0초→0.05초 수정
+07:27  ★ i_2 두 번째 불일치 (2일 만에 같은 실수)
+13:04  본선 압축 시작 (178개 파일 제거)
+15:18  단일 .pt 3종 → 5종
+16:32  이미지 처리 2회→1회 (6ms 절약) + 예선 후보 정정
+18:30  제출 보고서 + 자원 로깅(RESLOG)
+총 ~18시간, 60개 commit
+</code></pre>
+<p><strong>통신 주기 수정</strong>: 시뮬 통신 코드의 기본 주기가 1.0초 → 1 Hz. 50 Hz 목표인데 1 Hz. 한 줄 수정이 지연 시간의 가장 큰 원인.</p>
+<p><strong>★ i_2 두 번째 불일치</strong>: 학습 데이터를 21프레임으로 바꿨는데 실제 운전 코드는 2프레임인 채로 방치. <strong>2일 전과 정확히 같은 패턴</strong>. 같은 함정에 두 번 빠짐. 앞차 검출 9%(정상 ~50%). 1시간 만에 수정.</p>
+<p><strong>★ speedway 데이터 빠짐</strong>: 사용자 새벽 1:43 "지금 학습에 스피드웨이 다 들어있지?" → 들어있지 않았음. 본선 전날 새벽에 8단계 데이터 가공을 처음부터 다시. 사용자: "데이터 관리 잘못했지? 문서는 체계가 없어."</p>
+<p><strong>178개 파일 제거</strong>: 612→434개. 9일 작업 중 "운영에 필요하지 않은" 게 뭔지 분명히 알기 때문에 가능.</p>
+<p><strong>maxdiff 1.8e-7</strong>: 분리해서 계산 vs 하나로 계산 — 소수점 오차 수준으로 같다는 검증.</p>
+<p><strong>예선 후보 정정</strong>: 문서에는 A, 정성 검증 결과 잘 되는 건 B → 정정.</p>
+<p><strong>회고</strong>: 9단계를 한 날에 통과한 게 9일 중 가장 밀도 높은 날. 가능했던 이유는 5/19~5/26의 설계/인프라가 충분히 단단했기 때문. 다만 ★같은 실수가 같은 날 또 나온 건 "체크리스트가 사람 머리에만 있으면 2일 안에 재발"의 증거.</p>
+<hr />
+<h3 id="528">5/28 (수) — 마지막 수정 + 회고록</h3>
+<pre><code>09:47  사용자 — 자원 로깅이 다 비어있다고 지적
+09:50  폴백 코드 다시 작성 + 3가지 환경에서 검증
+11:20  회고록 작성 시작
+</code></pre>
+<p>자원 로깅(RESLOG) 코드를 다른 환경에서 실행 안 해보고 제출 → 모든 필드가 빈 값.</p>
+<blockquote>
+<p>사용자: "실행도 안해보고 푸시하면 어뜨케 대회 컴퓨터에서 저런데"</p>
+</blockquote>
+<p>폴백 코드를 다시 짬 — <code>/proc</code> 파일과 <code>nvidia-smi</code> 명령어로 GPU/CPU/메모리/네트워크 측정. 3가지 환경에서 직접 실행 후 제출.</p>
+<p><strong>회고</strong>: "초기화만 보고 실제 실행 미검증" 패턴. import 성공과 실제 동작은 다르다.</p>
+<hr />
+<h3 id="9">9일 곡선</h3>
+<pre><code>5/19  설계 합의         (11 commit)
+5/20  파이프라인 5개     (11 commit)
+5/21  인프라 가속        (11 commit)  ← i_1 캐시 + MPC 수정
+5/22  운영 편의          (10 commit)
+5/23  잔버그 정리        (11 commit)
+5/24  전환 한 줄         ( 5 commit)  ← 가장 적지만 가장 큰 결정
+5/25  진흙탕            (19 commit)  ← i_2 불일치 + gate 표류
+5/26  부풀리기          (27 commit)  ← A1E2EModel + 신경망 gate
+5/27  압축 → 정정 → 운영 (60 commit)  ← 9단계, 19시간
+5/28  수정 + 회고        ( 2 commit)
+</code></pre>
+<p><strong>확장 6일 → 정합 1일(5/25) → 부풀림 1일(5/26) → 압축+정정+운영 1일(5/27) → 수정+회고(5/28)</strong>. 비율이 잘 맞았다. 압축은 확장보다 짧아도 되지만, 그 짧은 1일이 가능하려면 확장 6일 동안 모듈 간 의존성이 깨끗하게 유지돼 있어야 한다는 게 전제.</p>
+<blockquote>
+<p>다음 사이클의 나에게 — "또 물린 패턴" 섹션 한 번 다시 읽고 시작해라. 2일 만에 같은 사고 두 번 빠지는 거, 다음엔 막자.</p>
+</blockquote>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+mermaid.initialize({startOnLoad:true,theme:'default',themeVariables:{fontSize:'14px',fontFamily:'-apple-system,"Noto Sans KR",sans-serif'},flowchart:{curve:'basis',useMaxWidth:true,htmlLabels:true},sequence:{useMaxWidth:true}});
+</script></body></html>

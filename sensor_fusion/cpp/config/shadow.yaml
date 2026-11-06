@@ -1,0 +1,44 @@
+a1_fusion:
+  ros__parameters:
+    mode: association
+    primary_coast_s: 0.3
+    primary_max_position_variance_m2: 1.0
+    # Apparent velocity + planar yaw correction is not yet driving-validated.
+    primary_motion_verified: false
+    # Continuous GNSS/INS motion, independent of MOLA correction/standstill hold.
+    ego_source: gnss_odom
+    gnss_odom_topic: /a1_gnss/odom
+    gnss_status_topic: /gsof_client/gsof/ins_solution_49
+    gnss_odom_verified: false
+    # Default driver time_source=now; GPS mode needs the relay's UTC offset here.
+    gnss_status_stamp_offset_s: 0.0
+    imu_topic: /gnss/imu
+    imu_frame: ins
+    imu_stationary_start_confirmed: false
+    imu_mount_verified: false
+    imu_calibration_s: 2.0
+    imu_max_integration_s: 10.0
+    base_from_imu: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # Deliberately unverified: fill measured installation values before enabling.
+    # clock_verified, calibration_verified and base_from_lidar live in calibration.yaml.
+    ins_mount_verified: false
+    camera_metric_validated: false
+    ins_topic: /gsof_client/gsof/ins_solution_49
+    lidar_topic: /lidar_points
+    lidar_frame: hesai_lidar
+    camera_frame: hikrobot_camera_vis
+    point_time_field: timestamp
+    ins_stamp_offset_s: 0.0
+    ins_to_vehicle_yaw_rad: 0.0
+    base_to_ins_m: [0.0, 0.0, 0.0]
+    # Camera/bumper alignment and motion still require validation.
+    # Legacy fusion mode only. Nominal optical transform: camera 0.8 m forward, 0.3 m below LiDAR.
+    # Lateral=0 assumed; camera level/forward nominal, fine angles/intrinsics unverified.
+    camera_from_base: [0.0, -0.3, -0.8, 1.5707963267948966, -1.5707963267948966, 0.0]
+    camera_width: 1280.0
+    bumper_x_m: 0.0
+    plan_speed_mps: -1.0
+    max_age_s: 0.25
+    pair_slop_s: 0.08
+    corridor_half_width_m: 1.8
+    object_threshold: 0.5

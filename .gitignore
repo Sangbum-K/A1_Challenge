@@ -5,3 +5,24 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Build products and recorded bags
+build/
+install/
+log/
+*.db3
+*.mcap
+*.bag
+
+# Run results (COLCON_IGNORE keeps colcon from scanning recordings)
+sensor_fusion/outputs/*
+!sensor_fusion/outputs/COLCON_IGNORE
+
+# Presentation files and large binaries
+docs/presentations/
+sensor_fusion/cpp/models/*.pt
+sensor_fusion/third_party/patchwork-plusplus/pictures/
+
+# Earlier project copies kept on disk only (not tracked)
+sensor_fusion/reference/

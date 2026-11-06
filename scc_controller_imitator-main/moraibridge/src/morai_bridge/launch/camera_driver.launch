@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <!-- Task Period -->
-    <rosparam file="$(find morai_bridge)/../config/rosparam_system.yaml" command="load"/>
-    <!-- Camera Driver -->
-    <node pkg="morai_bridge" type="morai_camera_driver" name="camera_driver" output="screen"/>
-</launch>

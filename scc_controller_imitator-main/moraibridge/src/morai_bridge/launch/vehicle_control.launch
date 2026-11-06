@@ -1,5 +1,0 @@
-<!-- -->
-<launch>
-    <rosparam file="$(find morai_bridge)/../config/rosparam_system.yaml" command="load"/>
-    <node pkg="morai_bridge" type="morai_vehicle_control" name="vehicle_control" output="screen" respawn="true"/>
-</launch>

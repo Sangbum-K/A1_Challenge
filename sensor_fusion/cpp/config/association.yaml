@@ -1,0 +1,76 @@
+a1_association:
+  ros__parameters:
+    map_filter_enabled: true
+    map_frame: map
+    # Camera and LiDAR geometry lives in calibration.yaml.
+    # Existing vehicle_extrinsics.yaml: LiDAR z=1.20m above ground.
+    sensor_height_m: 1.2
+    lidar_time_offset_s: 0.0
+    pair_slop_s: 0.08
+    # Display only: temporal EMA 0.15 s; enter/hold hysteresis, lower edge threshold.
+    presence_threshold: 0.4
+    presence_hold_threshold: 0.35
+    presence_edge_threshold: 0.25
+    fragment_merge_gap_m: 0.45
+    bin_search_min: 0
+    bin_search_max: 39
+    # Lateral target limit while the racing line cannot be used. Corners need this width.
+    corridor_half_width_m: 12.0
+    # Forward region of interest: widens with range for corners and grades.
+    roi_half_width_m: 12.0
+    roi_half_tangent: 0.58
+    roi_grade_margin: 0.1
+    # Fine first-pass clusters; bounded vehicle fragment merging follows.
+    cluster_tolerance_m: 0.45
+    cluster_range_start_m: 20.0
+    cluster_range_slope: 0.01
+    cluster_max_tolerance_m: 0.85
+    cluster_height_gap_m: 1.2
+    voxel_size_m: 0.16
+    cluster_min_points: 5
+    # Beyond weak_min_range_m a vehicle may be one LiDAR ring.
+    far_cluster_min_points: 3
+    weak_min_range_m: 40.0
+    min_height_above_ground_m: 0.15
+    show_debug_clusters: false
+    bev_forward_range_m: 100.0
+    # Tracks and logs extend to 120 m. Far targets stay off until bag evaluation passes.
+    processing_range_m: 120.0
+    # Planar distance from the LiDAR origin to the rear face of the track.
+    target_min_range_m: 3.0
+    target_max_range_m: 50.0
+    far_entry_range_m: 50.0
+    far_keep_range_m: 35.0
+    far_score_promote: 3.0
+    far_score_release: 1.5
+    max_targets: 2
+    target_switch_hold_s: 0.3
+    # Initial experimental limits; validate against driving data.
+    track_coast_s: 0.5
+    track_memory_s: 1.5
+    track_max_position_variance_m2: 1.0
+    max_weak_tracks: 30
+    track_guided_gathering: true
+    # Camera evidence: start values, tune from the first bag.
+    evidence_tau_s: 4.0
+    evidence_neutral_probability: 0.25
+    evidence_alpha: 0.15
+    evidence_step_max: 1.5
+    evidence_step_min: -0.2
+    evidence_confirm: 3.0
+    evidence_release: 1.0
+    evidence_match_probability: 0.4
+    camera_bin_dilation: 1
+    camera_silent_max_s: 2.0
+    # Racing line for target selection and logs. Unverified means logged only.
+    raceline_path: ""
+    raceline_closed_loop: true
+    map_from_raceline: [0.0, 0.0, 0.0]
+    raceline_verified: false
+    gnss_odom_topic: /a1_gnss/odom
+    gnss_status_topic: /gsof_client/gsof/ins_solution_49
+    gnss_status_stamp_offset_s: 0.0
+    # User reconfirmed original -LiDAR Y forward; no ROI heading offset.
+    # Crop heading only; not a measured camera extrinsic yaw correction.
+    lidar_roi_center_deg: 0.0
+    show_window: false

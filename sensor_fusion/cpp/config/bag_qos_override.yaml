@@ -1,0 +1,45 @@
+# camera_aravis2 publishes images with sensor-data QoS (best effort).
+# `ros2 bag record` subscribes RELIABLE by default, which never matches a
+# BEST_EFFORT publisher, so the bag would stay empty.  Depth is large enough
+# to ride out a short disk stall at 21 FPS.
+/camera_driver_gv/vis/image_raw:
+  history: keep_last
+  depth: 60
+  reliability: best_effort
+  durability: volatile
+/camera_driver_gv/vis/camera_info:
+  history: keep_last
+  depth: 60
+  reliability: best_effort
+  durability: volatile
+# The rest of the replay set. Sensor streams are best effort as well.
+/lidar_points:
+  history: keep_last
+  depth: 30
+  reliability: best_effort
+  durability: volatile
+/lead_fusion/input/lidar_points:
+  history: keep_last
+  depth: 30
+  reliability: best_effort
+  durability: volatile
+/lead_fusion/a2:
+  history: keep_last
+  depth: 60
+  reliability: best_effort
+  durability: volatile
+/a1_gnss/odom:
+  history: keep_last
+  depth: 100
+  reliability: best_effort
+  durability: volatile
+/gsof_client/gsof/ins_solution_49:
+  history: keep_last
+  depth: 100
+  reliability: best_effort
+  durability: volatile
+/lidar_odometry/pose_quality:
+  history: keep_last
+  depth: 30
+  reliability: best_effort
+  durability: volatile

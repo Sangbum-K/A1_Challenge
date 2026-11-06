@@ -1,5 +1,0 @@
-std_msgs/Header header 
-
-autohyu_msgs/BehaviorTrajectory lk_trajectory
-autohyu_msgs/BehaviorTrajectory llc_trajectory
-autohyu_msgs/BehaviorTrajectory rlc_trajectory

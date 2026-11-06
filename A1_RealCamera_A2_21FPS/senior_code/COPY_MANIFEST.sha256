@@ -1,3 +1,0 @@
-6763cfe442ec7be32eb22d0873b2d8b8577073b3d1f435fb6878d99337c2f5a0  src/model/image_models/a2_model.py
-8b9262a5bdd214081b62223f1fee3bb96f50c55b3f3b5bcc3300a5ba30a8fd91  data/ckpts/seg_pretrain_fx640_v3_backbone.pt
-c095b16f15cd73614f2f829bba774095e9c65626b895d4cf1558692953f44003  data/ckpts/a2_mf20_v2s_n20.pt
