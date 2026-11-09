@@ -1,0 +1,38 @@
+data_path: bags
+dst_path : pre_static
+[INFO] [1794232472.476506727] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+input_bags:
+- bags/static01
+[INFO] [1794232472.477826829] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+topics in bags/static01:
+- /sensor/camera/image_raw : sensor_msgs/msg/Image
+- /sensor/camera/camera_info : sensor_msgs/msg/CameraInfo
+- /sensor/lidar/points : sensor_msgs/msg/PointCloud2
+selected topics:
+- camera_info: /sensor/camera/camera_info
+- image      : /sensor/camera/image_raw
+- points     : /sensor/lidar/points
+[INFO] [1794232472.479030418] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+intensity_channel: intensity
+[INFO] [1794232472.497568858] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+try to get the camera model automatically
+[INFO] [1794232472.501092721] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+camera_model: plumb_bob
+image_size  : 1280 720
+intrinsics  : 1038.77 1046.08 654.937 384.473
+dist_coeffs : -0.158338  0.069947  -0.00157  0.003519         0
+processing images and points (num_threads_per_bag=12)
+start processing bags/static01
+[INFO] [1794232472.502732586] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+[INFO] [1794232472.511062986] [rosbag2_storage]: Opened database 'bags/static01/static01_0.db3' for READ_ONLY.
+[33mwarning: large point timestamp (1794232441.231807 > 1.0) found!![0m
+[33m       : assume that point times are absolute and convert them to relative[0m
+[33m       : replace_frame_stamp=1 wrt_first_frame_timestamp=1[0m
+[33mwarning: use first point timestamp as frame timestamp[0m
+[33m       : frame=1794232441.132453 point=1794232441.132453[0m
+processed bags/static01
+lidar_points:1
+lidar_points[0]:385831
+LiDAR FoV: 178.452[deg]
+save LiDAR images
+save meta data

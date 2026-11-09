@@ -1,0 +1,23 @@
+# Hikrobot MV-CS023-10GC, ROI 1280x720 (offset_x 320, offset_y 240). ROI·초점을 바꾸면 다시 보정한다.
+# 2026-11-09 실내 체커보드 보정. camera_calibration cameracalibrator, 8x6 내부 코너, 칸 0.035 m, 영상 75장.
+# 원본: calibrationdata.tar.gz 의 ost.yaml (camera_name만 바꿈)
+image_width: 1280
+image_height: 720
+camera_name: hikrobot_camera_vis
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [1038.77129, 0.0, 654.9374, 0.0, 1046.08269, 384.47327, 0.0, 0.0, 1.0]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.158338, 0.069947, -0.001570, 0.003519, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [980.64972, 0.0, 660.9902, 0.0, 0.0, 1025.25427, 384.2059, 0.0, 0.0, 0.0, 1.0, 0.0]

@@ -1,0 +1,38 @@
+data_path: sel02
+dst_path : pre_dyn02
+[INFO] [1794232783.225625541] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+input_bags:
+- sel02/scene02
+[INFO] [1794232783.227624296] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+topics in sel02/scene02:
+- /sensor/lidar/points : sensor_msgs/msg/PointCloud2
+- /sensor/camera/image_raw : sensor_msgs/msg/Image
+- /sensor/camera/camera_info : sensor_msgs/msg/CameraInfo
+selected topics:
+- camera_info: /sensor/camera/camera_info
+- image      : /sensor/camera/image_raw
+- points     : /sensor/lidar/points
+[INFO] [1794232783.229493520] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+intensity_channel: intensity
+[INFO] [1794232783.255504673] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+try to get the camera model automatically
+[INFO] [1794232783.260385147] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+camera_model: plumb_bob
+image_size  : 1280 720
+intrinsics  : 1038.77 1046.08 654.937 384.473
+dist_coeffs : -0.158338  0.069947  -0.00157  0.003519         0
+processing images and points (num_threads_per_bag=12)
+start processing sel02/scene02
+[INFO] [1794232783.262752120] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+[INFO] [1794232783.270255814] [rosbag2_storage]: Opened database 'sel02/scene02/scene02_0.db3' for READ_ONLY.
+[33mwarning: large point timestamp (1794232694.531644 > 1.0) found!![0m
+[33m       : assume that point times are absolute and convert them to relative[0m
+[33m       : replace_frame_stamp=1 wrt_first_frame_timestamp=1[0m
+[33mwarning: use first point timestamp as frame timestamp[0m
+[33m       : frame=1794232694.431776 point=1794232694.431776[0m
+processed sel02/scene02
+lidar_points:1
+lidar_points[0]:7979748
+LiDAR FoV: 179.001[deg]
+save LiDAR images
+save meta data

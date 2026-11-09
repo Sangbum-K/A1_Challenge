@@ -1,0 +1,14 @@
+# 두 노드가 함께 읽는 카메라 내부값과 시각 설정.
+# LiDAR·카메라 장착값은 a1_description/config/a1.yaml이 단일 출처이고, launch가 넘긴다.
+# 내부값: 2026-11-09 체커보드 보정 (camera_bringup/config/camera_info_1280x720.yaml 과 같은 값, ROI offset 320/240)
+/**:
+  ros__parameters:
+    camera_fx: 1038.77129               # 초점거리 [px]
+    camera_fy: 1046.08269
+    camera_cx: 654.9374                 # 주점 [px]
+    camera_cy: 384.47327
+    camera_distortion: [-0.158338, 0.069947, -0.001570, 0.003519]  # k1, k2, p1, p2 (k3 = 0)
+    clock_verified: false
+    pair_slop_s: 0.08                   # 서로 다른 입력을 같은 시각으로 보는 한계 [s]
+    # bag 재생에서 /clock이 입력 시각보다 뒤처지는 양(40 Hz = 25 ms)을 흡수한다 [s]. 실차 시계 오차는 이보다 크면 거부된다.
+    clock_tolerance_s: 0.05

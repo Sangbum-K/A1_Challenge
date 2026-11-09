@@ -1,0 +1,49 @@
+loading /tmp/claude-1000/-home-ailab-A1-Challenge-2026-main/41778928-b36c-4d95-bf66-864a5846da21/scratchpad/pert1/static01.(png|ply)
+use manually estimated initial guess
+   0: f: 9.249028e-01 d: 0.00e+00 g: 3.36e-01 h: 0.00e+00 s: 0.00e+00 e:  0 it: 5.38e-02 tt: 5.38e-02
+   1: f: 9.142785e-01 d: 1.06e-02 g: 1.91e-01 h: 1.32e-02 s: 3.12e-02 e:  6 it: 5.88e-02 tt: 1.13e-01
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+W1109 22:55:24.031646 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.467442, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+   2: f: 9.135580e-01 d: 7.21e-04 g: 3.47e-01 h: 7.27e-03 s: 2.13e-02 e:  8 it: 1.07e-01 tt: 2.20e-01
+   3: f: 9.129613e-01 d: 5.97e-04 g: 1.07e+00 h: 1.01e-03 s: 1.81e-03 e:  1 it: 5.10e-02 tt: 2.71e-01
+   4: f: 9.122450e-01 d: 7.16e-04 g: 8.55e-01 h: 8.68e-04 s: 8.66e-04 e:  1 it: 5.22e-02 tt: 3.23e-01
+   5: f: 9.119115e-01 d: 3.33e-04 g: 1.06e+00 h: 1.18e-03 s: 1.65e-02 e:  3 it: 5.97e-02 tt: 3.83e-01
+   6: f: 9.113894e-01 d: 5.22e-04 g: 9.53e-01 h: 3.90e-03 s: 8.81e-03 e:  1 it: 5.26e-02 tt: 4.36e-01
+   7: f: 9.101326e-01 d: 1.26e-03 g: 8.75e-01 h: 7.93e-03 s: 1.64e-01 e:  1 it: 5.12e-02 tt: 4.87e-01
+   8: f: 9.082596e-01 d: 1.87e-03 g: 4.17e-01 h: 1.70e-02 s: 2.23e-02 e:  1 it: 5.31e-02 tt: 5.40e-01
+   9: f: 9.051637e-01 d: 3.10e-03 g: 2.26e-01 h: 3.58e-02 s: 1.63e-01 e:  1 it: 5.22e-02 tt: 5.92e-01
+W1109 22:55:24.503904 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.0495597, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+  10: f: 8.954671e-01 d: 9.70e-03 g: 1.08e+00 h: 5.54e-02 s: 1.00e+00 e:  3 it: 9.99e-02 tt: 6.92e-01
+W1109 22:55:24.606571 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.222573, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+  11: f: 8.928519e-01 d: 2.62e-03 g: 1.05e+00 h: 2.06e-02 s: 7.92e-02 e:  8 it: 1.03e-01 tt: 7.95e-01
+W1109 22:55:24.713171 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.2554, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+  12: f: 8.922691e-01 d: 5.83e-04 g: 1.10e+00 h: 2.71e-03 s: 9.20e-03 e:  9 it: 1.07e-01 tt: 9.01e-01
+W1109 22:55:24.814086 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.145242, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+  13: f: 8.921989e-01 d: 7.01e-05 g: 1.10e+00 h: 2.93e-04 s: 1.85e-03 e: 10 it: 1.01e-01 tt: 1.00e+00
+W1109 22:55:25.017910 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.124839, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+  14: f: 8.921955e-01 d: 3.42e-06 g: 1.10e+00 h: 1.81e-05 s: 1.36e-04 e: 20 it: 2.04e-01 tt: 1.21e+00
+W1109 22:55:25.174297 221088 line_search.cc:592] Line search failed: Wolfe bracketing phase shrank bracket width: 0, to < tolerance: 1e-09, with descent_direction_max_norm: 0.411558, and failed to find a point satisfying the strong Wolfe conditions or a bracketing containing such a point. Accepting point found satisfying Armijo condition only, to allow continuation.
+   0: f: 8.943362e-01 d: 0.00e+00 g: 1.18e+00 h: 0.00e+00 s: 0.00e+00 e:  0 it: 4.98e-02 tt: 4.98e-02
+   1: f: 8.862694e-01 d: 8.07e-03 g: 5.05e-01 h: 2.83e-03 s: 1.85e-03 e:  9 it: 1.03e-01 tt: 1.52e-01
+   2: f: 8.803040e-01 d: 5.97e-03 g: 2.53e-01 h: 2.91e-03 s: 3.44e-03 e:  2 it: 1.00e-01 tt: 2.53e-01
+   3: f: 8.791688e-01 d: 1.14e-03 g: 2.89e-01 h: 9.98e-03 s: 3.40e-02 e:  2 it: 9.98e-02 tt: 3.52e-01
+   4: f: 8.787238e-01 d: 4.45e-04 g: 2.37e-01 h: 2.00e-03 s: 4.06e-03 e:  2 it: 9.98e-02 tt: 4.52e-01
+   5: f: 8.783875e-01 d: 3.36e-04 g: 4.27e-01 h: 7.91e-03 s: 1.83e-01 e:  1 it: 5.71e-02 tt: 5.09e-01
+   6: f: 8.779362e-01 d: 4.51e-04 g: 3.82e-01 h: 4.34e-03 s: 9.48e-02 e:  1 it: 4.95e-02 tt: 5.59e-01
+   7: f: 8.773372e-01 d: 5.99e-04 g: 3.31e-01 h: 1.01e-02 s: 4.27e-01 e:  1 it: 5.15e-02 tt: 6.10e-01
+   8: f: 8.771128e-01 d: 2.24e-04 g: 1.27e-01 h: 1.92e-02 s: 1.50e-01 e:  1 it: 5.20e-02 tt: 6.62e-01
+   9: f: 8.769147e-01 d: 1.98e-04 g: 1.48e-01 h: 3.78e-03 s: 9.22e-02 e:  2 it: 1.01e-01 tt: 7.64e-01
+  10: f: 8.766847e-01 d: 2.30e-04 g: 2.53e-01 h: 4.80e-03 s: 3.74e-01 e:  1 it: 5.23e-02 tt: 8.16e-01
+  11: f: 8.763339e-01 d: 3.51e-04 g: 1.80e-01 h: 5.91e-03 s: 3.87e-01 e:  1 it: 5.12e-02 tt: 8.67e-01
+  12: f: 8.759585e-01 d: 3.75e-04 g: 2.27e-01 h: 8.42e-03 s: 1.00e+00 e:  1 it: 5.03e-02 tt: 9.18e-01
+  13: f: 8.758507e-01 d: 1.08e-04 g: 1.98e-01 h: 3.55e-03 s: 1.78e-01 e:  2 it: 1.02e-01 tt: 1.02e+00
+  14: f: 8.757715e-01 d: 7.91e-05 g: 1.09e-01 h: 4.71e-03 s: 1.00e+00 e:  1 it: 4.87e-02 tt: 1.07e+00
+  15: f: 8.757337e-01 d: 3.78e-05 g: 1.10e-01 h: 3.56e-03 s: 1.00e+00 e:  1 it: 5.09e-02 tt: 1.12e+00
+  16: f: 8.756943e-01 d: 3.94e-05 g: 8.00e-02 h: 1.96e-03 s: 7.26e-01 e:  2 it: 1.00e-01 tt: 1.22e+00
+  17: f: 8.756871e-01 d: 7.19e-06 g: 1.22e-02 h: 6.69e-04 s: 1.00e+00 e:  1 it: 4.82e-02 tt: 1.27e+00
+   0: f: 8.770334e-01 d: 0.00e+00 g: 2.85e-01 h: 0.00e+00 s: 0.00e+00 e:  0 it: 4.68e-02 tt: 4.68e-02
+   1: f: 8.769908e-01 d: 4.26e-05 g: 1.16e-01 h: 4.81e-05 s: 1.19e-04 e:  8 it: 1.48e-01 tt: 1.94e-01
+   2: f: 8.769531e-01 d: 3.77e-05 g: 6.70e-02 h: 1.40e-04 s: 7.78e-04 e:  1 it: 4.87e-02 tt: 2.43e-01
+   3: f: 8.769456e-01 d: 7.51e-06 g: 5.79e-02 h: 9.63e-04 s: 6.11e-02 e:  2 it: 9.59e-02 tt: 3.39e-01
+   4: f: 8.769442e-01 d: 1.43e-06 g: 5.81e-02 h: 3.15e-04 s: 2.92e-04 e:  2 it: 9.97e-02 tt: 4.39e-01
+   5: f: 8.769343e-01 d: 9.84e-06 g: 5.23e-02 h: 4.46e-04 s: 7.03e-02 e:  1 it: 4.87e-02 tt: 4.87e-01

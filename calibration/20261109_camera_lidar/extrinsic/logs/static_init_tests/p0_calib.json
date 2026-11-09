@@ -1,0 +1,48 @@
+{
+  "camera": {
+    "camera_model": "plumb_bob",
+    "distortion_coeffs": [
+      -0.158338,
+      0.069947,
+      -0.00157,
+      0.003519,
+      0.0
+    ],
+    "intrinsics": [
+      1038.77129,
+      1046.08269,
+      654.9374,
+      384.47327
+    ]
+  },
+  "meta": {
+    "bag_names": [
+      "static01"
+    ],
+    "camera_info_topic": "/sensor/camera/camera_info",
+    "data_path": "bags",
+    "image_topic": "/sensor/camera/image_raw",
+    "intensity_channel": "intensity",
+    "points_topic": "/sensor/lidar/points"
+  },
+  "results": {
+    "T_lidar_camera": [
+      -0.021298262170866177,
+      -0.9539949789861598,
+      -0.36754028960533913,
+      0.009353220612040847,
+      0.7098469433363748,
+      -0.7040534139709484,
+      -0.01840175470003875
+    ],
+    "init_T_lidar_camera": [
+      4.898587196589413e-17,
+      -0.8,
+      -0.3,
+      -2.1648901405887332e-17,
+      0.7071067811865475,
+      -0.7071067811865475,
+      2.1648901405887332e-17
+    ]
+  }
+}
